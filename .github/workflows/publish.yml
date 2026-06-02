@@ -22,9 +22,10 @@ jobs:
         with:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: 'npm install --package-lock=false'
+        run: 'npm ci'
 
       - name: Publish
         run: 'npm run release'
