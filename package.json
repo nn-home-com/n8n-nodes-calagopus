@@ -1,0 +1,37 @@
+{
+  "name": "n8n-nodes-calagopus",
+  "version": "0.1.0",
+  "description": "n8n community node for automating Calagopus game server panels.",
+  "license": "MIT",
+  "homepage": "https://github.com/nn-home-com/n8n-nodes-calagopus",
+  "keywords": ["n8n-community-node-package", "n8n", "calagopus", "game-server", "automation"],
+  "author": { "name": "nn-home-com", "email": "nn-home-com@users.noreply.github.com" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nn-home-com/n8n-nodes-calagopus.git"
+  },
+  "scripts": {
+    "build": "n8n-node build",
+    "build:watch": "tsc --watch",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "release": "n8n-node release",
+    "prepublishOnly": "n8n-node prerelease"
+  },
+  "files": ["dist", "CHANGELOG.md"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": ["dist/credentials/CalagopusApi.credentials.js"],
+    "nodes": ["dist/nodes/Calagopus/Calagopus.node.js"]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "^0.32.1",
+    "eslint": "9.29.0",
+    "prettier": "3.6.2",
+    "release-it": "^19.0.4",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": { "n8n-workflow": "*" }
+}
