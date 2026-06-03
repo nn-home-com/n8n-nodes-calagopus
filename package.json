@@ -11,7 +11,7 @@
     "url": "https://github.com/nn-home-com/n8n-nodes-calagopus.git"
   },
   "scripts": {
-    "build": "n8n-node build",
+    "build": "rm -rf dist && n8n-node build",
     "build:watch": "tsc --watch",
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",

@@ -303,7 +303,7 @@ export const operations: OperationSpec[] = [
 
 	op('serverAnnouncements', 'Server Announcements', 'Get Many', 'serverAnnouncements.getMany', 'GET', '/api/client/servers/{serverUuid}/announcements', 'List server announcements', ['serverUuid']),
 
-	op('serverBackups', 'Server Backups', 'Create', 'serverBackups.create', 'POST', '/api/client/servers/{serverUuid}/backups', 'Create a backup', ['serverUuid']),
+	op('serverBackups', 'Server Backups', 'Start Backup', 'serverBackups.create', 'POST', '/api/client/servers/{serverUuid}/backups', 'Start a backup', ['serverUuid']),
 	op('serverBackups', 'Server Backups', 'Delete', 'serverBackups.delete', 'DELETE', '/api/client/servers/{serverUuid}/backups/{backupUuid}', 'Delete a backup', ['serverUuid', 'backupUuid']),
 	op('serverBackups', 'Server Backups', 'Download', 'serverBackups.download', 'GET', '/api/client/servers/{serverUuid}/backups/{backupUuid}/download', 'Get a backup download URL', ['serverUuid', 'backupUuid']),
 	op('serverBackups', 'Server Backups', 'Get', 'serverBackups.get', 'GET', '/api/client/servers/{serverUuid}/backups/{backupUuid}', 'Get a backup', ['serverUuid', 'backupUuid']),
@@ -414,6 +414,190 @@ const bodyOperationValues = allOperations
 const rawBodyOperationValues = allOperations
 	.filter((operation) => operation.rawBody)
 	.map((operation) => operation.value);
+
+const showForJsonBody = (operation: string[]) => ({
+	operation,
+	bodyMode: ['json'],
+});
+
+const structuredBodyProperties: INodeProperties[] = [
+	{
+		displayName: 'Command',
+		name: 'consoleCommand',
+		type: 'string',
+		required: true,
+		displayOptions: { show: showForJsonBody(['clientServer.sendCommand']) },
+		default: '',
+		description: 'The console command to send to the server',
+	},
+	{
+		displayName: 'Power Action',
+		name: 'powerAction',
+		type: 'options',
+		required: true,
+		displayOptions: { show: showForJsonBody(['clientServer.setPowerState']) },
+		options: [
+			{ name: 'Kill', value: 'kill' },
+			{ name: 'Restart', value: 'restart' },
+			{ name: 'Start', value: 'start' },
+			{ name: 'Stop', value: 'stop' },
+		],
+		default: 'start',
+		description: 'The power action to send',
+	},
+	{
+		displayName: 'Backup Name',
+		name: 'backupName',
+		type: 'string',
+		displayOptions: { show: showForJsonBody(['serverBackups.create', 'serverBackups.update']) },
+		default: '',
+		description: 'The backup name. Leave empty on create to use the panel default.',
+	},
+	{
+		displayName: 'Ignored Files',
+		name: 'backupIgnoredFiles',
+		type: 'string',
+		typeOptions: {
+			rows: 5,
+		},
+		displayOptions: { show: showForJsonBody(['serverBackups.create']) },
+		default: '',
+		placeholder: '*.log\ncache/\ntmp/**',
+		description: 'Files or patterns to exclude from the backup, one per line',
+	},
+	{
+		displayName: 'Locked',
+		name: 'backupLocked',
+		type: 'boolean',
+		displayOptions: { show: showForJsonBody(['serverBackups.update']) },
+		default: false,
+		description: 'Whether the backup should be locked',
+	},
+	{
+		displayName: 'Truncate Directory',
+		name: 'truncateDirectory',
+		type: 'boolean',
+		displayOptions: {
+			show: showForJsonBody(['serverBackups.restore', 'serverSettings.install']),
+		},
+		default: false,
+		description: 'Whether to empty the server directory before restoring or reinstalling',
+	},
+	{
+		displayName: 'Restore Startup',
+		name: 'restoreStartup',
+		type: 'boolean',
+		displayOptions: { show: showForJsonBody(['serverBackups.restore']) },
+		default: false,
+		description: 'Whether to restore startup variables from backup metadata',
+	},
+	{
+		displayName: 'Database Name',
+		name: 'databaseName',
+		type: 'string',
+		required: true,
+		displayOptions: { show: showForJsonBody(['serverDatabases.create']) },
+		default: '',
+		description: 'The name to create on the selected database host',
+	},
+	{
+		displayName: 'Database Host UUID',
+		name: 'databaseHostUuidBody',
+		type: 'string',
+		required: true,
+		displayOptions: { show: showForJsonBody(['serverDatabases.create']) },
+		default: '',
+		description: 'The host UUID where the database should be created',
+	},
+	{
+		displayName: 'Locked',
+		name: 'databaseLocked',
+		type: 'boolean',
+		displayOptions: { show: showForJsonBody(['serverDatabases.update']) },
+		default: false,
+		description: 'Whether the database should be locked',
+	},
+	{
+		displayName: 'Server Name',
+		name: 'serverName',
+		type: 'string',
+		displayOptions: { show: showForJsonBody(['serverSettings.rename']) },
+		default: '',
+		description: 'The new server name',
+	},
+	{
+		displayName: 'Description',
+		name: 'serverDescription',
+		type: 'string',
+		typeOptions: {
+			rows: 3,
+		},
+		displayOptions: { show: showForJsonBody(['serverSettings.rename']) },
+		default: '',
+		description: 'The new server description. Leave empty to keep the current description.',
+	},
+	{
+		displayName: 'Enabled',
+		name: 'autoKillEnabled',
+		type: 'boolean',
+		displayOptions: { show: showForJsonBody(['serverSettings.updateAutoKill']) },
+		default: false,
+		description: 'Whether auto-kill should be enabled',
+	},
+	{
+		displayName: 'Seconds',
+		name: 'autoKillSeconds',
+		type: 'number',
+		displayOptions: { show: showForJsonBody(['serverSettings.updateAutoKill']) },
+		default: 30,
+		description: 'Seconds to wait before killing the server',
+		typeOptions: {
+			minValue: 1,
+			maxValue: 3600,
+		},
+	},
+	{
+		displayName: 'Auto Start Behavior',
+		name: 'autoStartBehavior',
+		type: 'options',
+		displayOptions: { show: showForJsonBody(['serverSettings.updateAutoStart']) },
+		options: [
+			{ name: 'Always', value: 'always' },
+			{ name: 'Never', value: 'never' },
+			{ name: 'Unless Stopped', value: 'unless_stopped' },
+		],
+		default: 'unless_stopped',
+		description: 'When Calagopus should automatically start the server',
+	},
+	{
+		displayName: 'Timezone',
+		name: 'serverTimezone',
+		type: 'string',
+		displayOptions: { show: showForJsonBody(['serverSettings.updateTimezone']) },
+		default: '',
+		placeholder: 'Europe/Berlin',
+		description: 'The server timezone. Use Body JSON with {"timezone": null} to clear it.',
+	},
+	{
+		displayName: 'Startup Command',
+		name: 'startupCommand',
+		type: 'string',
+		typeOptions: {
+			rows: 3,
+		},
+		displayOptions: { show: showForJsonBody(['serverStartup.updateCommand']) },
+		default: '',
+		description: 'The server startup command',
+	},
+	{
+		displayName: 'Docker Image',
+		name: 'startupDockerImage',
+		type: 'string',
+		displayOptions: { show: showForJsonBody(['serverStartup.updateDockerImage']) },
+		default: '',
+		description: 'The Docker image to use for the server',
+	},
+];
 
 const uniqueResources = new Map<string, string>();
 for (const operation of allOperations) {
@@ -677,6 +861,7 @@ export const commonProperties: INodeProperties[] = [
 		],
 		default: 'json',
 	},
+	...structuredBodyProperties,
 	{
 		displayName: 'Body JSON',
 		name: 'bodyJson',

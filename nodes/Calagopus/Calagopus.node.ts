@@ -54,6 +54,157 @@ function toJsonObject(response: unknown): IDataObject {
 	return { data: response };
 }
 
+function parseMultilineList(value: string): string[] {
+	return value
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+}
+
+function addStringIfNotEmpty(
+	body: IDataObject,
+	key: string,
+	value: string,
+): void {
+	if (value.trim() === '') {
+		return;
+	}
+
+	body[key] = value;
+}
+
+function buildStructuredBody(
+	this: IExecuteFunctions,
+	operationValue: string,
+	itemIndex: number,
+): IDataObject {
+	const body: IDataObject = {};
+
+	switch (operationValue) {
+		case 'clientServer.sendCommand':
+			addStringIfNotEmpty(
+				body,
+				'command',
+				this.getNodeParameter('consoleCommand', itemIndex, '') as string,
+			);
+			break;
+
+		case 'clientServer.setPowerState':
+			body.action = this.getNodeParameter('powerAction', itemIndex, 'start') as string;
+			break;
+
+		case 'serverBackups.create':
+			addStringIfNotEmpty(
+				body,
+				'name',
+				this.getNodeParameter('backupName', itemIndex, '') as string,
+			);
+			body.ignored_files = parseMultilineList(
+				this.getNodeParameter('backupIgnoredFiles', itemIndex, '') as string,
+			);
+			break;
+
+		case 'serverBackups.restore':
+			body.truncate_directory = this.getNodeParameter(
+				'truncateDirectory',
+				itemIndex,
+				false,
+			) as boolean;
+			body.restore_startup = this.getNodeParameter(
+				'restoreStartup',
+				itemIndex,
+				false,
+			) as boolean;
+			break;
+
+		case 'serverBackups.update':
+			addStringIfNotEmpty(
+				body,
+				'name',
+				this.getNodeParameter('backupName', itemIndex, '') as string,
+			);
+			body.locked = this.getNodeParameter('backupLocked', itemIndex, false) as boolean;
+			break;
+
+		case 'serverDatabases.create':
+			addStringIfNotEmpty(
+				body,
+				'name',
+				this.getNodeParameter('databaseName', itemIndex, '') as string,
+			);
+			addStringIfNotEmpty(
+				body,
+				'database_host_uuid',
+				this.getNodeParameter('databaseHostUuidBody', itemIndex, '') as string,
+			);
+			break;
+
+		case 'serverDatabases.update':
+			body.locked = this.getNodeParameter('databaseLocked', itemIndex, false) as boolean;
+			break;
+
+		case 'serverSettings.install':
+			body.truncate_directory = this.getNodeParameter(
+				'truncateDirectory',
+				itemIndex,
+				false,
+			) as boolean;
+			break;
+
+		case 'serverSettings.rename':
+			addStringIfNotEmpty(
+				body,
+				'name',
+				this.getNodeParameter('serverName', itemIndex, '') as string,
+			);
+			addStringIfNotEmpty(
+				body,
+				'description',
+				this.getNodeParameter('serverDescription', itemIndex, '') as string,
+			);
+			break;
+
+		case 'serverSettings.updateAutoKill':
+			body.enabled = this.getNodeParameter('autoKillEnabled', itemIndex, false) as boolean;
+			body.seconds = this.getNodeParameter('autoKillSeconds', itemIndex, 30) as number;
+			break;
+
+		case 'serverSettings.updateAutoStart':
+			body.behavior = this.getNodeParameter(
+				'autoStartBehavior',
+				itemIndex,
+				'unless_stopped',
+			) as string;
+			break;
+
+		case 'serverSettings.updateTimezone':
+			addStringIfNotEmpty(
+				body,
+				'timezone',
+				this.getNodeParameter('serverTimezone', itemIndex, '') as string,
+			);
+			break;
+
+		case 'serverStartup.updateCommand':
+			addStringIfNotEmpty(
+				body,
+				'command',
+				this.getNodeParameter('startupCommand', itemIndex, '') as string,
+			);
+			break;
+
+		case 'serverStartup.updateDockerImage':
+			addStringIfNotEmpty(
+				body,
+				'image',
+				this.getNodeParameter('startupDockerImage', itemIndex, '') as string,
+			);
+			break;
+	}
+
+	return body;
+}
+
 export class Calagopus implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Calagopus',
@@ -159,10 +310,15 @@ export class Calagopus implements INodeType {
 					const bodyMode = this.getNodeParameter('bodyMode', itemIndex, defaultBodyMode) as string;
 
 					if (bodyMode === 'json') {
-						requestOptions.body = parseJsonParameter(
+						const structuredBody = buildStructuredBody.call(this, operation.value, itemIndex);
+						const jsonBody = parseJsonParameter(
 							this.getNodeParameter('bodyJson', itemIndex, '{}') as string,
 							'Body JSON',
 						);
+						requestOptions.body = {
+							...structuredBody,
+							...jsonBody,
+						};
 						requestOptions.headers = {
 							...requestOptions.headers,
 							'Content-Type': 'application/json',
