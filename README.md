@@ -36,9 +36,9 @@ See the [n8n community nodes installation guide](https://docs.n8n.io/integration
 
 The node includes Calagopus Panel operations for:
 
-* Client account, permissions, and accessible servers
+* Client account management (API keys, command snippets, SSH keys, security keys, OAuth links, sessions, two-factor, avatar, email, password), permissions, accessible servers, and server groups
 * Server power, console, resources, activity, startup, settings, subusers, schedules, mounts, allocations, databases, backups, announcements, and files
-* Admin users, servers, nodes, locations, mounts, roles, OAuth providers, nests, eggs, egg repositories, egg configurations, database hosts, backup configurations, announcements, settings, stats, system health, updates, and extensions
+* Admin users, servers, nodes, locations, mounts, roles, OAuth providers, nests, eggs, egg repositories, egg configurations, database hosts, backup configurations, announcements, assets, activity, settings, stats, system health, updates, and extensions
 * Custom API requests for endpoints added by Calagopus updates or panel extensions
 
 ## Credentials
