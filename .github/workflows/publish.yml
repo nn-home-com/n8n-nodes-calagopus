@@ -5,6 +5,12 @@ on:
     tags:
       - '*.*.*'
 
+# Retry npm registry fetches so transient network errors (e.g. ECONNRESET) don't fail the run.
+env:
+  npm_config_fetch_retries: '5'
+  npm_config_fetch_retry_mintimeout: '20000'
+  npm_config_fetch_retry_maxtimeout: '120000'
+
 jobs:
   publish:
     name: Publish to npm
