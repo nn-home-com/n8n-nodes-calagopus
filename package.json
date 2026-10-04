@@ -48,11 +48,11 @@
     "panelVersion": "1.2.4"
   },
   "devDependencies": {
-    "@n8n/node-cli": "^0.32.1",
-    "eslint": "9.29.0",
-    "prettier": "3.6.2",
-    "release-it": "^19.0.4",
-    "typescript": "5.9.2"
+    "@n8n/node-cli": "^0.50.4",
+    "eslint": "10.11.0",
+    "prettier": "3.9.9",
+    "release-it": "^21.1.0",
+    "typescript": "7.0.2"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
