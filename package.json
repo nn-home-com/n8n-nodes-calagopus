@@ -26,6 +26,7 @@
     "lint": "n8n-node lint",
     "lint:fix": "n8n-node lint --fix",
     "test": "node --test \"test/*.test.mjs\"",
+    "api:coverage": "node scripts/api-coverage.mjs",
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
@@ -42,6 +43,9 @@
     "nodes": [
       "dist/nodes/Calagopus/Calagopus.node.js"
     ]
+  },
+  "calagopus": {
+    "panelVersion": "1.2.4"
   },
   "devDependencies": {
     "@n8n/node-cli": "^0.32.1",

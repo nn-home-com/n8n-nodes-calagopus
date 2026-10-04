@@ -38,3 +38,41 @@ jobs:
 
       - name: Run build
         run: 'npm run build'
+
+      - name: Run tests
+        run: 'npm test'
+
+  api-coverage:
+    name: API coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: 'npm ci --ignore-scripts'
+
+      - name: Run build
+        run: 'npm run build'
+
+      - name: Read supported panel version
+        id: panel
+        run: echo "version=$(node -p "require('./package.json').calagopus.panelVersion")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out Calagopus Panel ${{ steps.panel.outputs.version }}
+        uses: actions/checkout@v6
+        with:
+          repository: calagopus/panel
+          ref: release-${{ steps.panel.outputs.version }}
+          path: .panel
+          sparse-checkout: backend/src/routes
+
+      # Fails if an operation points to a route that does not exist in the supported panel version.
+      - name: Compare operations with panel routes
+        run: 'npm run api:coverage -- .panel'
