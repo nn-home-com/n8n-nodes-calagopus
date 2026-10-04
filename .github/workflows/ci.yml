@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -66,7 +66,7 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').calagopus.panelVersion")" >> "$GITHUB_OUTPUT"
 
       - name: Check out Calagopus Panel ${{ steps.panel.outputs.version }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: calagopus/panel
           ref: release-${{ steps.panel.outputs.version }}
