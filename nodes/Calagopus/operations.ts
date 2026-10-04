@@ -204,7 +204,7 @@ export const operations: OperationSpec[] = [
 	op('adminNodes', 'Admin Nodes', 'Get Mounts', 'adminNodes.getMounts', 'GET', '/api/admin/nodes/{nodeUuid}/mounts', 'List node mounts', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get Server Resources', 'adminNodes.getServerResources', 'GET', '/api/admin/nodes/{nodeUuid}/servers/resources', 'Get server resources on a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get Servers', 'adminNodes.getServers', 'GET', '/api/admin/nodes/{nodeUuid}/servers', 'List node servers', ['nodeUuid']),
-	op('adminNodes', 'Admin Nodes', 'Get Transferring Servers', 'adminNodes.getTransferringServers', 'GET', '/api/admin/nodes/{nodeUuid}/servers/transfers', 'List transferring servers on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Transferring Servers', 'adminNodes.getTransferringServers', 'GET', '/api/admin/nodes/{nodeUuid}/transfers/servers', 'List transferring servers on a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Reset Token', 'adminNodes.resetToken', 'POST', '/api/admin/nodes/{nodeUuid}/reset-token', 'Reset a node token', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Send Servers Power Action', 'adminNodes.sendServersPowerAction', 'POST', '/api/admin/nodes/{nodeUuid}/servers/power', 'Send a power action to multiple node servers', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Update', 'adminNodes.update', 'PATCH', '/api/admin/nodes/{nodeUuid}', 'Update a node', ['nodeUuid']),
