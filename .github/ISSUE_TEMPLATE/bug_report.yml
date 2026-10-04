@@ -1,0 +1,45 @@
+name: Bug report
+description: An operation fails or behaves differently than the panel API.
+labels: [bug]
+body:
+  - type: input
+    id: operation
+    attributes:
+      label: Resource and operation
+      placeholder: Server Backups → Restore
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include the error message and, if possible, the request sent (with tokens removed).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: n8n-nodes-calagopus version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: panel-version
+    attributes:
+      label: Calagopus Panel version
+      placeholder: 1.2.4
+    validations:
+      required: true
+  - type: input
+    id: n8n-version
+    attributes:
+      label: n8n version
+      placeholder: 2.0.0
+    validations:
+      required: true
