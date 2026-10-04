@@ -3,6 +3,7 @@ import type {
 	IExecuteFunctions,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
+	IN8nHttpFullResponse,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -10,11 +11,11 @@ import type {
 import { ApplicationError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import {
 	commonProperties,
-	defaultBodyModeByOperation,
 	operationByValue,
 	operationProperties,
 	resourceOptions,
 } from './operations';
+import type { OperationSpec } from './operations';
 
 function parseJsonParameter(value: string, parameterName: string): IDataObject {
 	if (value.trim() === '') {
@@ -54,6 +55,38 @@ function toJsonObject(response: unknown): IDataObject {
 	return { data: response };
 }
 
+function getHeader(headers: IDataObject, name: string): string | undefined {
+	const value = headers[name.toLowerCase()];
+
+	if (Array.isArray(value)) {
+		return value.length > 0 ? String(value[0]) : undefined;
+	}
+
+	return value === undefined || value === null ? undefined : String(value);
+}
+
+/**
+ * Extracts the file name from a Content-Disposition header, preferring the
+ * RFC 5987 `filename*` parameter over the plain `filename` parameter.
+ */
+function parseContentDispositionFileName(header: string | undefined): string | undefined {
+	if (!header) {
+		return undefined;
+	}
+
+	const extended = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(header);
+	if (extended) {
+		try {
+			return decodeURIComponent(extended[1].trim());
+		} catch {
+			// Fall back to the plain filename parameter.
+		}
+	}
+
+	const plain = /filename\s*=\s*"?([^";]+)"?/.exec(header);
+	return plain ? plain[1].trim() : undefined;
+}
+
 function parseMultilineList(value: string): string[] {
 	return value
 		.split(/\r?\n/)
@@ -61,11 +94,7 @@ function parseMultilineList(value: string): string[] {
 		.filter((line) => line.length > 0);
 }
 
-function addStringIfNotEmpty(
-	body: IDataObject,
-	key: string,
-	value: string,
-): void {
+function addStringIfNotEmpty(body: IDataObject, key: string, value: string): void {
 	if (value.trim() === '') {
 		return;
 	}
@@ -90,6 +119,7 @@ function buildStructuredBody(
 			break;
 
 		case 'clientServer.setPowerState':
+		case 'serverDatabaseInstances.setPowerState':
 			body.action = this.getNodeParameter('powerAction', itemIndex, 'start') as string;
 			break;
 
@@ -102,6 +132,11 @@ function buildStructuredBody(
 			body.ignored_files = parseMultilineList(
 				this.getNodeParameter('backupIgnoredFiles', itemIndex, '') as string,
 			);
+			addStringIfNotEmpty(
+				body,
+				'backup_group_uuid',
+				this.getNodeParameter('backupGroupUuidBody', itemIndex, '') as string,
+			);
 			break;
 
 		case 'serverBackups.restore':
@@ -110,11 +145,7 @@ function buildStructuredBody(
 				itemIndex,
 				false,
 			) as boolean;
-			body.restore_startup = this.getNodeParameter(
-				'restoreStartup',
-				itemIndex,
-				false,
-			) as boolean;
+			body.restore_startup = this.getNodeParameter('restoreStartup', itemIndex, false) as boolean;
 			break;
 
 		case 'serverBackups.update':
@@ -205,6 +236,114 @@ function buildStructuredBody(
 	return body;
 }
 
+async function setRequestBody(
+	this: IExecuteFunctions,
+	operation: OperationSpec,
+	itemIndex: number,
+	requestOptions: IHttpRequestOptions,
+): Promise<void> {
+	if (operation.body === 'binary') {
+		const binaryPropertyName = this.getNodeParameter('binaryPropertyName', itemIndex) as string;
+		const binaryData = this.helpers.assertBinaryData(itemIndex, binaryPropertyName);
+
+		requestOptions.body = await this.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
+		requestOptions.json = false;
+		requestOptions.headers = {
+			...requestOptions.headers,
+			'Content-Type': binaryData.mimeType || 'application/octet-stream',
+		};
+		return;
+	}
+
+	const bodyMode = this.getNodeParameter('bodyMode', itemIndex, operation.body) as string;
+
+	if (bodyMode === 'json') {
+		const structuredBody = buildStructuredBody.call(this, operation.value, itemIndex);
+		const jsonBody = parseJsonParameter(
+			this.getNodeParameter('bodyJson', itemIndex, '{}') as string,
+			'Body JSON',
+		);
+		requestOptions.body = {
+			...structuredBody,
+			...jsonBody,
+		};
+		requestOptions.headers = {
+			...requestOptions.headers,
+			'Content-Type': 'application/json',
+		};
+	} else if (bodyMode === 'raw') {
+		requestOptions.body = this.getNodeParameter('rawBody', itemIndex, '') as string;
+		requestOptions.json = false;
+		requestOptions.headers = {
+			...requestOptions.headers,
+			'Content-Type': 'text/plain',
+		};
+	}
+}
+
+async function requestBinary(
+	this: IExecuteFunctions,
+	itemIndex: number,
+	requestOptions: IHttpRequestOptions,
+): Promise<INodeExecutionData> {
+	const response = (await this.helpers.httpRequestWithAuthentication.call(this, 'calagopusApi', {
+		...requestOptions,
+		json: false,
+		encoding: 'arraybuffer',
+		returnFullResponse: true,
+		headers: {
+			...requestOptions.headers,
+			Accept: '*/*',
+		},
+	})) as IN8nHttpFullResponse;
+
+	const headers = (response.headers ?? {}) as IDataObject;
+	const statusCode = response.statusCode;
+	const content = Buffer.from(response.body as ArrayBuffer);
+
+	// Only reachable with "Ignore HTTP Status Errors": surface the error body as JSON.
+	if (statusCode >= 400) {
+		const text = content.toString('utf8');
+		let body: unknown = text;
+		try {
+			body = JSON.parse(text);
+		} catch {
+			// Keep the plain text body.
+		}
+
+		return {
+			json: { statusCode, body } as IDataObject,
+			pairedItem: itemIndex,
+		};
+	}
+
+	const mimeType = getHeader(headers, 'content-type') ?? 'application/octet-stream';
+	const fileName = parseContentDispositionFileName(getHeader(headers, 'content-disposition'));
+	const binaryPropertyName = this.getNodeParameter(
+		'binaryOutputPropertyName',
+		itemIndex,
+		'data',
+	) as string;
+	const binaryData = await this.helpers.prepareBinaryData(content, fileName, mimeType);
+
+	const json: IDataObject = {
+		fileName: binaryData.fileName,
+		mimeType: binaryData.mimeType,
+		fileSize: content.length,
+	};
+
+	if (requestOptions.returnFullResponse === true) {
+		json.statusCode = statusCode;
+		json.headers = headers;
+	}
+
+	return {
+		json,
+		binary: { [binaryPropertyName]: binaryData },
+		pairedItem: itemIndex,
+	};
+}
+
 export class Calagopus implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Calagopus',
@@ -268,7 +407,7 @@ export class Calagopus implements INodeType {
 						? normalizePath(this.getNodeParameter('customPath', itemIndex) as string)
 						: operation.path;
 
-				for (const identifier of operation.identifiers ?? []) {
+				for (const identifier of operation.identifiers) {
 					const value = encodeURIComponent(this.getNodeParameter(identifier, itemIndex) as string);
 					url = url.replace(`{${identifier}}`, value);
 				}
@@ -306,31 +445,12 @@ export class Calagopus implements INodeType {
 				}
 
 				if (operation.hasBody) {
-					const defaultBodyMode = defaultBodyModeByOperation.get(operation.value) ?? 'json';
-					const bodyMode = this.getNodeParameter('bodyMode', itemIndex, defaultBodyMode) as string;
+					await setRequestBody.call(this, operation, itemIndex, requestOptions);
+				}
 
-					if (bodyMode === 'json') {
-						const structuredBody = buildStructuredBody.call(this, operation.value, itemIndex);
-						const jsonBody = parseJsonParameter(
-							this.getNodeParameter('bodyJson', itemIndex, '{}') as string,
-							'Body JSON',
-						);
-						requestOptions.body = {
-							...structuredBody,
-							...jsonBody,
-						};
-						requestOptions.headers = {
-							...requestOptions.headers,
-							'Content-Type': 'application/json',
-						};
-					} else if (bodyMode === 'raw') {
-						requestOptions.body = this.getNodeParameter('rawBody', itemIndex, '') as string;
-						requestOptions.json = false;
-						requestOptions.headers = {
-							...requestOptions.headers,
-							'Content-Type': 'text/plain',
-						};
-					}
+				if (operation.response === 'binary') {
+					returnData.push(await requestBinary.call(this, itemIndex, requestOptions));
+					continue;
 				}
 
 				const response = await this.helpers.httpRequestWithAuthentication.call(

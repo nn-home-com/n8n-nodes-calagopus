@@ -3,15 +3,24 @@ import type { IHttpRequestMethods, INodeProperties, INodePropertyOptions } from 
 export type IdentifierName =
 	| 'allocationUuid'
 	| 'announcementUuid'
+	| 'apiKeyIdentifier'
 	| 'apiKeyUuid'
 	| 'backupConfigurationUuid'
+	| 'backupGroupUuid'
 	| 'backupUuid'
 	| 'commandSnippetUuid'
+	| 'connectionUuid'
+	| 'databaseAgentHostUuid'
+	| 'databaseAgentTemplateUuid'
 	| 'databaseHostUuid'
+	| 'databaseInstanceUuid'
+	| 'databaseUserUuid'
 	| 'databaseUuid'
+	| 'deviceUuid'
 	| 'eggConfigurationUuid'
 	| 'eggRepositoryUuid'
 	| 'eggUuid'
+	| 'emailVariableName'
 	| 'extensionPackageName'
 	| 'externalServerId'
 	| 'externalUserId'
@@ -37,9 +46,27 @@ export type IdentifierName =
 	| 'sshKeyUuid'
 	| 'stepUuid'
 	| 'subuserUuid'
+	| 'systemBackupPolicyUuid'
 	| 'templateIdentifier'
 	| 'userUuid'
 	| 'variableUuid';
+
+/**
+ * How the request body of an operation is sent.
+ *
+ * - `json`: a JSON object, optionally prefilled from structured fields
+ * - `raw`: plain text, e.g. file contents
+ * - `binary`: the contents of a binary property of the input item, e.g. a database dump
+ */
+export type BodyFormat = 'json' | 'raw' | 'binary';
+
+/**
+ * How the response of an operation is returned.
+ *
+ * - `json`: the parsed response body as item JSON
+ * - `binary`: the response body as item binary data, e.g. an exported file
+ */
+export type ResponseFormat = 'json' | 'binary';
 
 export interface OperationSpec {
 	name: string;
@@ -49,9 +76,17 @@ export interface OperationSpec {
 	method: IHttpRequestMethods;
 	path: string;
 	description: string;
-	identifiers?: IdentifierName[];
+	identifiers: IdentifierName[];
+	hasBody: boolean;
+	body: BodyFormat;
+	response: ResponseFormat;
+}
+
+interface OperationOptions {
+	/** Defaults to `true` for every method except GET and DELETE. */
 	hasBody?: boolean;
-	rawBody?: boolean;
+	body?: BodyFormat;
+	response?: ResponseFormat;
 }
 
 const op = (
@@ -63,8 +98,11 @@ const op = (
 	path: string,
 	description: string,
 	identifiers: IdentifierName[] = [],
-	hasBody = !['GET', 'DELETE'].includes(method),
-	rawBody = false,
+	{
+		hasBody = !['GET', 'DELETE'].includes(method),
+		body = 'json',
+		response = 'json',
+	}: OperationOptions = {},
 ): OperationSpec => ({
 	resource,
 	resourceName,
@@ -74,8 +112,9 @@ const op = (
 	path,
 	description,
 	identifiers,
-	hasBody,
-	rawBody,
+	hasBody: hasBody || body !== 'json',
+	body,
+	response,
 });
 
 export const operations: OperationSpec[] = [
@@ -91,6 +130,7 @@ export const operations: OperationSpec[] = [
 	op('adminAssets', 'Admin Assets', 'Get Many', 'adminAssets.getMany', 'GET', '/api/admin/assets', 'List assets'),
 	op('adminAssets', 'Admin Assets', 'Upload', 'adminAssets.upload', 'PUT', '/api/admin/assets', 'Upload an asset'),
 	op('adminAssets', 'Admin Assets', 'Delete', 'adminAssets.delete', 'POST', '/api/admin/assets/delete', 'Delete an asset'),
+	op('adminAssets', 'Admin Assets', 'Search', 'adminAssets.search', 'POST', '/api/admin/assets/search', 'Search assets'),
 
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Create', 'adminBackupConfigurations.create', 'POST', '/api/admin/backup-configurations', 'Create a backup configuration'),
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Delete', 'adminBackupConfigurations.delete', 'DELETE', '/api/admin/backup-configurations/{backupConfigurationUuid}', 'Delete a backup configuration', ['backupConfigurationUuid']),
@@ -102,6 +142,40 @@ export const operations: OperationSpec[] = [
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Get Servers', 'adminBackupConfigurations.getServers', 'GET', '/api/admin/backup-configurations/{backupConfigurationUuid}/servers', 'List servers using a backup configuration', ['backupConfigurationUuid']),
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Get Stats', 'adminBackupConfigurations.getStats', 'GET', '/api/admin/backup-configurations/{backupConfigurationUuid}/stats', 'Get backup configuration statistics', ['backupConfigurationUuid']),
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Update', 'adminBackupConfigurations.update', 'PATCH', '/api/admin/backup-configurations/{backupConfigurationUuid}', 'Update a backup configuration', ['backupConfigurationUuid']),
+	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Delete Failed Backups', 'adminBackupConfigurations.deleteFailedBackups', 'POST', '/api/admin/backup-configurations/{backupConfigurationUuid}/backups/delete-failed', 'Queue deletion of all failed backups for a backup configuration', ['backupConfigurationUuid']),
+	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Duplicate', 'adminBackupConfigurations.duplicate', 'POST', '/api/admin/backup-configurations/{backupConfigurationUuid}/duplicate', 'Duplicate a backup configuration', ['backupConfigurationUuid']),
+	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Test', 'adminBackupConfigurations.test', 'POST', '/api/admin/backup-configurations/test', 'Test a backup configuration on a node'),
+
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Create', 'adminDatabaseAgentHosts.create', 'POST', '/api/admin/database-agent-hosts', 'Create a database agent host'),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Delete', 'adminDatabaseAgentHosts.delete', 'DELETE', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}', 'Delete a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Delete Failed Backups', 'adminDatabaseAgentHosts.deleteFailedBackups', 'POST', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/backups/delete-failed', 'Queue deletion of all failed backups on a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Delete Instance', 'adminDatabaseAgentHosts.deleteInstance', 'DELETE', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/instances/{databaseInstanceUuid}', 'Delete a database instance', ['databaseAgentHostUuid', 'databaseInstanceUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get', 'adminDatabaseAgentHosts.get', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}', 'Get a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Backups', 'adminDatabaseAgentHosts.getBackups', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/backups', 'List backups on a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Capacities', 'adminDatabaseAgentHosts.getCapacities', 'GET', '/api/admin/database-agent-hosts/capacities', 'Get the capacity of all database agent hosts'),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Capacity', 'adminDatabaseAgentHosts.getCapacity', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/capacity', 'Get the capacity of a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Config', 'adminDatabaseAgentHosts.getConfig', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/config', 'Get the database agent configuration', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Instance', 'adminDatabaseAgentHosts.getInstance', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/instances/{databaseInstanceUuid}', 'Get a database instance', ['databaseAgentHostUuid', 'databaseInstanceUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Instances', 'adminDatabaseAgentHosts.getInstances', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/instances', 'List database instances on a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Many', 'adminDatabaseAgentHosts.getMany', 'GET', '/api/admin/database-agent-hosts', 'List database agent hosts'),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get System Overview', 'adminDatabaseAgentHosts.getSystemOverview', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/system/overview', 'Get the system overview of a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get System Stats', 'adminDatabaseAgentHosts.getSystemStats', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/system/stats', 'Get system statistics of a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Token', 'adminDatabaseAgentHosts.getToken', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/token', 'Get the database agent host token', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Reset Token', 'adminDatabaseAgentHosts.resetToken', 'POST', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/reset-token', 'Reset the database agent host token', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Test', 'adminDatabaseAgentHosts.test', 'POST', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/test', 'Test the connection to a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update', 'adminDatabaseAgentHosts.update', 'PATCH', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}', 'Update a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Config', 'adminDatabaseAgentHosts.updateConfig', 'PATCH', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/config', 'Update the database agent configuration', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Default Config', 'adminDatabaseAgentHosts.updateDefaultConfig', 'PATCH', '/api/admin/database-agent-hosts/config', 'Update the default database agent configuration'),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Instance', 'adminDatabaseAgentHosts.updateInstance', 'PATCH', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/instances/{databaseInstanceUuid}', 'Update a database instance', ['databaseAgentHostUuid', 'databaseInstanceUuid']),
+
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Create', 'adminDatabaseAgentTemplates.create', 'POST', '/api/admin/database-agent-templates', 'Create a database agent template'),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Delete', 'adminDatabaseAgentTemplates.delete', 'DELETE', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}', 'Delete a database agent template', ['databaseAgentTemplateUuid']),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Duplicate', 'adminDatabaseAgentTemplates.duplicate', 'POST', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}/duplicate', 'Duplicate a database agent template', ['databaseAgentTemplateUuid']),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Get', 'adminDatabaseAgentTemplates.get', 'GET', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}', 'Get a database agent template', ['databaseAgentTemplateUuid']),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Get Instances', 'adminDatabaseAgentTemplates.getInstances', 'GET', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}/instances', 'List database instances using a template', ['databaseAgentTemplateUuid']),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Get Many', 'adminDatabaseAgentTemplates.getMany', 'GET', '/api/admin/database-agent-templates', 'List database agent templates'),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Update', 'adminDatabaseAgentTemplates.update', 'PATCH', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}', 'Update a database agent template', ['databaseAgentTemplateUuid']),
+	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Update Instances', 'adminDatabaseAgentTemplates.updateInstances', 'POST', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}/instances/update', 'Apply the current template specification to its database instances', ['databaseAgentTemplateUuid']),
 
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Create', 'adminDatabaseHosts.create', 'POST', '/api/admin/database-hosts', 'Create a database host'),
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Delete', 'adminDatabaseHosts.delete', 'DELETE', '/api/admin/database-hosts/{databaseHostUuid}', 'Delete a database host', ['databaseHostUuid']),
@@ -110,6 +184,17 @@ export const operations: OperationSpec[] = [
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Get Many', 'adminDatabaseHosts.getMany', 'GET', '/api/admin/database-hosts', 'List database hosts'),
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Test', 'adminDatabaseHosts.test', 'POST', '/api/admin/database-hosts/{databaseHostUuid}/test', 'Test a database host connection', ['databaseHostUuid']),
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Update', 'adminDatabaseHosts.update', 'PATCH', '/api/admin/database-hosts/{databaseHostUuid}', 'Update a database host', ['databaseHostUuid']),
+	op('adminDatabaseHosts', 'Admin Database Hosts', 'Delete Database', 'adminDatabaseHosts.deleteDatabase', 'DELETE', '/api/admin/database-hosts/{databaseHostUuid}/databases/{databaseUuid}', 'Delete a database on a database host', ['databaseHostUuid', 'databaseUuid']),
+
+	op('adminDevices', 'Admin Devices', 'Create', 'adminDevices.create', 'POST', '/api/admin/devices', 'Create a device'),
+	op('adminDevices', 'Admin Devices', 'Delete', 'adminDevices.delete', 'DELETE', '/api/admin/devices/{deviceUuid}', 'Delete a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Duplicate', 'adminDevices.duplicate', 'POST', '/api/admin/devices/{deviceUuid}/duplicate', 'Duplicate a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Get', 'adminDevices.get', 'GET', '/api/admin/devices/{deviceUuid}', 'Get a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Get Many', 'adminDevices.getMany', 'GET', '/api/admin/devices', 'List devices'),
+	op('adminDevices', 'Admin Devices', 'Get Nest Eggs', 'adminDevices.getNestEggs', 'GET', '/api/admin/devices/{deviceUuid}/nest-eggs', 'List eggs attached to a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Get Nodes', 'adminDevices.getNodes', 'GET', '/api/admin/devices/{deviceUuid}/nodes', 'List nodes attached to a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Get Servers', 'adminDevices.getServers', 'GET', '/api/admin/devices/{deviceUuid}/servers', 'List servers attached to a device', ['deviceUuid']),
+	op('adminDevices', 'Admin Devices', 'Update', 'adminDevices.update', 'PATCH', '/api/admin/devices/{deviceUuid}', 'Update a device', ['deviceUuid']),
 
 	op('adminEggConfigurations', 'Admin Egg Configurations', 'Create', 'adminEggConfigurations.create', 'POST', '/api/admin/egg-configurations', 'Create an egg configuration'),
 	op('adminEggConfigurations', 'Admin Egg Configurations', 'Delete', 'adminEggConfigurations.delete', 'DELETE', '/api/admin/egg-configurations/{eggConfigurationUuid}', 'Delete an egg configuration', ['eggConfigurationUuid']),
@@ -134,6 +219,9 @@ export const operations: OperationSpec[] = [
 	op('adminExtensions', 'Admin Extensions', 'Get Status', 'adminExtensions.getStatus', 'GET', '/api/admin/extensions/manage/status', 'Get extension manager status'),
 	op('adminExtensions', 'Admin Extensions', 'Rebuild', 'adminExtensions.rebuild', 'POST', '/api/admin/extensions/manage/rebuild', 'Rebuild extensions'),
 	op('adminExtensions', 'Admin Extensions', 'Remove', 'adminExtensions.remove', 'DELETE', '/api/admin/extensions/manage/{extensionPackageName}', 'Remove an extension', ['extensionPackageName']),
+	op('adminExtensions', 'Admin Extensions', 'Cancel Rebuild', 'adminExtensions.cancelRebuild', 'POST', '/api/admin/extensions/manage/rebuild/cancel', 'Cancel a running extension rebuild'),
+	op('adminExtensions', 'Admin Extensions', 'Restart Panel', 'adminExtensions.restart', 'POST', '/api/admin/extensions/manage/restart', 'Restart the panel to apply extension changes'),
+	op('adminExtensions', 'Admin Extensions', 'Update', 'adminExtensions.update', 'PATCH', '/api/admin/extensions/{extensionPackageName}', 'Enable or disable an extension', ['extensionPackageName']),
 
 	op('adminLocations', 'Admin Locations', 'Create', 'adminLocations.create', 'POST', '/api/admin/locations', 'Create a location'),
 	op('adminLocations', 'Admin Locations', 'Create Database Host Link', 'adminLocations.createDatabaseHostLink', 'POST', '/api/admin/locations/{locationUuid}/database-hosts', 'Attach a database host to a location', ['locationUuid']),
@@ -145,6 +233,9 @@ export const operations: OperationSpec[] = [
 	op('adminLocations', 'Admin Locations', 'Get Nodes', 'adminLocations.getNodes', 'GET', '/api/admin/locations/{locationUuid}/nodes', 'List nodes in a location', ['locationUuid']),
 	op('adminLocations', 'Admin Locations', 'Update', 'adminLocations.update', 'PATCH', '/api/admin/locations/{locationUuid}', 'Update a location', ['locationUuid']),
 	op('adminLocations', 'Admin Locations', 'Duplicate', 'adminLocations.duplicate', 'POST', '/api/admin/locations/{locationUuid}/duplicate', 'Duplicate a location', ['locationUuid']),
+	op('adminLocations', 'Admin Locations', 'Create Database Agent Host Link', 'adminLocations.createDatabaseAgentHostLink', 'POST', '/api/admin/locations/{locationUuid}/database-agent-hosts', 'Link a database agent host to a location', ['locationUuid']),
+	op('adminLocations', 'Admin Locations', 'Delete Database Agent Host Link', 'adminLocations.deleteDatabaseAgentHostLink', 'DELETE', '/api/admin/locations/{locationUuid}/database-agent-hosts/{databaseAgentHostUuid}', 'Unlink a database agent host from a location', ['locationUuid', 'databaseAgentHostUuid']),
+	op('adminLocations', 'Admin Locations', 'Get Database Agent Hosts', 'adminLocations.getDatabaseAgentHosts', 'GET', '/api/admin/locations/{locationUuid}/database-agent-hosts', 'List database agent hosts linked to a location', ['locationUuid']),
 
 	op('adminMounts', 'Admin Mounts', 'Create', 'adminMounts.create', 'POST', '/api/admin/mounts', 'Create a mount'),
 	op('adminMounts', 'Admin Mounts', 'Delete', 'adminMounts.delete', 'DELETE', '/api/admin/mounts/{mountUuid}', 'Delete a mount', ['mountUuid']),
@@ -185,13 +276,19 @@ export const operations: OperationSpec[] = [
 	op('adminNests', 'Admin Nests', 'Create Egg Variable', 'adminNests.createEggVariable', 'POST', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/variables', 'Create an egg variable', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Delete Egg Variable', 'adminNests.deleteEggVariable', 'DELETE', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/variables/{variableUuid}', 'Delete an egg variable', ['nestUuid', 'eggUuid', 'variableUuid']),
 	op('adminNests', 'Admin Nests', 'Update Egg Variable', 'adminNests.updateEggVariable', 'PATCH', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/variables/{variableUuid}', 'Update an egg variable', ['nestUuid', 'eggUuid', 'variableUuid']),
+	op('adminNests', 'Admin Nests', 'Create Egg Device', 'adminNests.createEggDevice', 'POST', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/devices', 'Attach a device to an egg', ['nestUuid', 'eggUuid']),
+	op('adminNests', 'Admin Nests', 'Delete Egg Device', 'adminNests.deleteEggDevice', 'DELETE', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/devices/{deviceUuid}', 'Detach a device from an egg', ['nestUuid', 'eggUuid', 'deviceUuid']),
+	op('adminNests', 'Admin Nests', 'Duplicate Egg Variable', 'adminNests.duplicateEggVariable', 'POST', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/variables/{variableUuid}/duplicate', 'Duplicate an egg variable', ['nestUuid', 'eggUuid', 'variableUuid']),
+	op('adminNests', 'Admin Nests', 'Get Egg Devices', 'adminNests.getEggDevices', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/devices', 'List devices attached to an egg', ['nestUuid', 'eggUuid']),
+	op('adminNests', 'Admin Nests', 'Import Eggs From URLs', 'adminNests.importEggsFromUrls', 'POST', '/api/admin/nests/{nestUuid}/eggs/import/url', 'Import one or more eggs from URLs', ['nestUuid']),
+	op('adminNests', 'Admin Nests', 'Update Egg From URL', 'adminNests.updateEggFromUrl', 'POST', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/update/import/url', 'Update an egg from an egg file URL', ['nestUuid', 'eggUuid']),
 
 	op('adminNodes', 'Admin Nodes', 'Create', 'adminNodes.create', 'POST', '/api/admin/nodes', 'Create a node'),
 	op('adminNodes', 'Admin Nodes', 'Create Allocations', 'adminNodes.createAllocations', 'POST', '/api/admin/nodes/{nodeUuid}/allocations', 'Create node allocations', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Create Mount Link', 'adminNodes.createMountLink', 'POST', '/api/admin/nodes/{nodeUuid}/mounts', 'Attach a mount to a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Delete', 'adminNodes.delete', 'DELETE', '/api/admin/nodes/{nodeUuid}', 'Delete a node', ['nodeUuid']),
-	op('adminNodes', 'Admin Nodes', 'Delete Allocations', 'adminNodes.deleteAllocations', 'DELETE', '/api/admin/nodes/{nodeUuid}/allocations', 'Delete node allocations', ['nodeUuid'], true),
-	op('adminNodes', 'Admin Nodes', 'Delete Backup', 'adminNodes.deleteBackup', 'DELETE', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}', 'Delete a node backup', ['nodeUuid', 'backupUuid'], true),
+	op('adminNodes', 'Admin Nodes', 'Delete Allocations', 'adminNodes.deleteAllocations', 'DELETE', '/api/admin/nodes/{nodeUuid}/allocations', 'Delete node allocations', ['nodeUuid'], { hasBody: true }),
+	op('adminNodes', 'Admin Nodes', 'Delete Backup', 'adminNodes.deleteBackup', 'DELETE', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}', 'Delete a node backup', ['nodeUuid', 'backupUuid'], { hasBody: true }),
 	op('adminNodes', 'Admin Nodes', 'Delete Mount Link', 'adminNodes.deleteMountLink', 'DELETE', '/api/admin/nodes/{nodeUuid}/mounts/{mountUuid}', 'Detach a mount from a node', ['nodeUuid', 'mountUuid']),
 	op('adminNodes', 'Admin Nodes', 'Detach Backup', 'adminNodes.detachBackup', 'POST', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/detach', 'Detach a node backup', ['nodeUuid', 'backupUuid']),
 	op('adminNodes', 'Admin Nodes', 'Download Backup', 'adminNodes.downloadBackup', 'GET', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/download', 'Get a node backup download URL', ['nodeUuid', 'backupUuid']),
@@ -204,7 +301,7 @@ export const operations: OperationSpec[] = [
 	op('adminNodes', 'Admin Nodes', 'Get Mounts', 'adminNodes.getMounts', 'GET', '/api/admin/nodes/{nodeUuid}/mounts', 'List node mounts', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get Server Resources', 'adminNodes.getServerResources', 'GET', '/api/admin/nodes/{nodeUuid}/servers/resources', 'Get server resources on a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get Servers', 'adminNodes.getServers', 'GET', '/api/admin/nodes/{nodeUuid}/servers', 'List node servers', ['nodeUuid']),
-	op('adminNodes', 'Admin Nodes', 'Get Transferring Servers', 'adminNodes.getTransferringServers', 'GET', '/api/admin/nodes/{nodeUuid}/servers/transfers', 'List transferring servers on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Transferring Servers', 'adminNodes.getTransferringServers', 'GET', '/api/admin/nodes/{nodeUuid}/transfers/servers', 'List transferring servers on a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Reset Token', 'adminNodes.resetToken', 'POST', '/api/admin/nodes/{nodeUuid}/reset-token', 'Reset a node token', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Send Servers Power Action', 'adminNodes.sendServersPowerAction', 'POST', '/api/admin/nodes/{nodeUuid}/servers/power', 'Send a power action to multiple node servers', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Update', 'adminNodes.update', 'PATCH', '/api/admin/nodes/{nodeUuid}', 'Update a node', ['nodeUuid']),
@@ -222,6 +319,34 @@ export const operations: OperationSpec[] = [
 	op('adminNodes', 'Admin Nodes', 'Get System Overview', 'adminNodes.getSystemOverview', 'GET', '/api/admin/nodes/{nodeUuid}/system/overview', 'Get node system overview', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get System Stats', 'adminNodes.getSystemStats', 'GET', '/api/admin/nodes/{nodeUuid}/system/stats', 'Get node system statistics', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Get Token', 'adminNodes.getToken', 'GET', '/api/admin/nodes/{nodeUuid}/token', 'Get a node token', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Check Device Access', 'adminNodes.checkDeviceAccess', 'GET', '/api/admin/nodes/{nodeUuid}/devices/{deviceUuid}/allowed', 'Check whether a device is allowed on a node', ['nodeUuid', 'deviceUuid']),
+	op('adminNodes', 'Admin Nodes', 'Check Mount Access', 'adminNodes.checkMountAccess', 'GET', '/api/admin/nodes/{nodeUuid}/mounts/{mountUuid}/allowed', 'Check whether a mount is allowed on a node', ['nodeUuid', 'mountUuid']),
+	op('adminNodes', 'Admin Nodes', 'Create Database Agent Host Link', 'adminNodes.createDatabaseAgentHostLink', 'POST', '/api/admin/nodes/{nodeUuid}/database-agent-hosts', 'Link a database agent host to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Create Database Host Link', 'adminNodes.createDatabaseHostLink', 'POST', '/api/admin/nodes/{nodeUuid}/database-hosts', 'Link a database host to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Create Device Link', 'adminNodes.createDeviceLink', 'POST', '/api/admin/nodes/{nodeUuid}/devices', 'Attach a device to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Create Enrollment', 'adminNodes.createEnrollment', 'POST', '/api/admin/nodes/{nodeUuid}/enrollment', 'Create an enrollment code for a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Create Tunnel', 'adminNodes.createTunnel', 'POST', '/api/admin/nodes/{nodeUuid}/tunnel', 'Enable the tunnel on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Delete Database Agent Host Link', 'adminNodes.deleteDatabaseAgentHostLink', 'DELETE', '/api/admin/nodes/{nodeUuid}/database-agent-hosts/{databaseAgentHostUuid}', 'Unlink a database agent host from a node', ['nodeUuid', 'databaseAgentHostUuid']),
+	op('adminNodes', 'Admin Nodes', 'Delete Database Host Link', 'adminNodes.deleteDatabaseHostLink', 'DELETE', '/api/admin/nodes/{nodeUuid}/database-hosts/{databaseHostUuid}', 'Unlink a database host from a node', ['nodeUuid', 'databaseHostUuid']),
+	op('adminNodes', 'Admin Nodes', 'Delete Device Link', 'adminNodes.deleteDeviceLink', 'DELETE', '/api/admin/nodes/{nodeUuid}/devices/{deviceUuid}', 'Detach a device from a node', ['nodeUuid', 'deviceUuid']),
+	op('adminNodes', 'Admin Nodes', 'Delete Failed Backups', 'adminNodes.deleteFailedBackups', 'POST', '/api/admin/nodes/{nodeUuid}/backups/delete-failed', 'Queue deletion of all failed backups on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Delete Tunnel', 'adminNodes.deleteTunnel', 'DELETE', '/api/admin/nodes/{nodeUuid}/tunnel', 'Disable the tunnel on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Export Backup', 'adminNodes.exportBackup', 'POST', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/export', 'Export a node backup', ['nodeUuid', 'backupUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Allocation IPs', 'adminNodes.getAllocationIps', 'GET', '/api/admin/nodes/{nodeUuid}/allocations/ips', 'List IP addresses used by node allocations', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Capacities', 'adminNodes.getCapacities', 'GET', '/api/admin/nodes/capacities', 'Get the capacity of all nodes'),
+	op('adminNodes', 'Admin Nodes', 'Get Database Agent Hosts', 'adminNodes.getDatabaseAgentHosts', 'GET', '/api/admin/nodes/{nodeUuid}/database-agent-hosts', 'List database agent hosts linked to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Database Hosts', 'adminNodes.getDatabaseHosts', 'GET', '/api/admin/nodes/{nodeUuid}/database-hosts', 'List database hosts linked to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Devices', 'adminNodes.getDevices', 'GET', '/api/admin/nodes/{nodeUuid}/devices', 'List devices attached to a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get System IPs', 'adminNodes.getSystemIps', 'GET', '/api/admin/nodes/{nodeUuid}/system/ips', 'List IP addresses available on the node host', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Transfers', 'adminNodes.getTransfers', 'GET', '/api/admin/nodes/{nodeUuid}/transfers', 'List server transfers on a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Tunnel', 'adminNodes.getTunnel', 'GET', '/api/admin/nodes/{nodeUuid}/tunnel', 'Get the tunnel configuration of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Tunnel Metrics', 'adminNodes.getTunnelMetrics', 'GET', '/api/admin/nodes/{nodeUuid}/tunnel/metrics', 'Get tunnel metrics of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Pair', 'adminNodes.pair', 'POST', '/api/admin/nodes/{nodeUuid}/pair', 'Pair a node with Wings using a pairing code', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Probe', 'adminNodes.probe', 'POST', '/api/admin/nodes/probe', 'Probe a Wings instance before pairing'),
+	op('adminNodes', 'Admin Nodes', 'Query Backup', 'adminNodes.queryBackup', 'GET', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/query', 'Get the archive format and size of a node backup', ['nodeUuid', 'backupUuid']),
+	op('adminNodes', 'Admin Nodes', 'Reassign Backup', 'adminNodes.reassignBackup', 'POST', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/reassign', 'Reassign a database backup to another database instance', ['nodeUuid', 'backupUuid']),
+	op('adminNodes', 'Admin Nodes', 'Rotate Tunnel Credentials', 'adminNodes.rotateTunnelCredentials', 'POST', '/api/admin/nodes/{nodeUuid}/tunnel/rotate', 'Rotate the tunnel credentials of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Update Tunnel', 'adminNodes.updateTunnel', 'PATCH', '/api/admin/nodes/{nodeUuid}/tunnel', 'Update the tunnel configuration of a node', ['nodeUuid']),
 
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Create', 'adminOAuthProviders.create', 'POST', '/api/admin/oauth-providers', 'Create an OAuth provider'),
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Create Mapping', 'adminOAuthProviders.createMapping', 'POST', '/api/admin/oauth-providers/{oauthProviderUuid}/mappings', 'Create an OAuth provider mapping', ['oauthProviderUuid']),
@@ -236,6 +361,7 @@ export const operations: OperationSpec[] = [
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Duplicate', 'adminOAuthProviders.duplicate', 'POST', '/api/admin/oauth-providers/{oauthProviderUuid}/duplicate', 'Duplicate an OAuth provider', ['oauthProviderUuid']),
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Get Mapping', 'adminOAuthProviders.getMapping', 'GET', '/api/admin/oauth-providers/{oauthProviderUuid}/mappings/{mappingUuid}', 'Get an OAuth provider mapping', ['oauthProviderUuid', 'mappingUuid']),
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Get User By Identifier', 'adminOAuthProviders.getUserByIdentifier', 'GET', '/api/admin/oauth-providers/{oauthProviderUuid}/users/identifier/{oauthUserIdentifier}', 'Get an OAuth provider user by identifier', ['oauthProviderUuid', 'oauthUserIdentifier']),
+	op('adminOAuthProviders', 'Admin OAuth Providers', 'Discover', 'adminOAuthProviders.discover', 'POST', '/api/admin/oauth-providers/discover', 'Discover OAuth provider settings from a .well-known configuration URL'),
 
 	op('adminRoles', 'Admin Roles', 'Create', 'adminRoles.create', 'POST', '/api/admin/roles', 'Create a role'),
 	op('adminRoles', 'Admin Roles', 'Delete', 'adminRoles.delete', 'DELETE', '/api/admin/roles/{roleUuid}', 'Delete a role', ['roleUuid']),
@@ -250,7 +376,7 @@ export const operations: OperationSpec[] = [
 	op('adminServers', 'Admin Servers', 'Create', 'adminServers.create', 'POST', '/api/admin/servers', 'Create a server'),
 	op('adminServers', 'Admin Servers', 'Create Allocation', 'adminServers.createAllocation', 'POST', '/api/admin/servers/{serverUuid}/allocations', 'Create a server allocation', ['serverUuid']),
 	op('adminServers', 'Admin Servers', 'Create Mount Link', 'adminServers.createMountLink', 'POST', '/api/admin/servers/{serverUuid}/mounts', 'Attach a mount to a server', ['serverUuid']),
-	op('adminServers', 'Admin Servers', 'Delete', 'adminServers.delete', 'DELETE', '/api/admin/servers/{serverUuid}', 'Delete a server', ['serverUuid'], true),
+	op('adminServers', 'Admin Servers', 'Delete', 'adminServers.delete', 'DELETE', '/api/admin/servers/{serverUuid}', 'Delete a server', ['serverUuid'], { hasBody: true }),
 	op('adminServers', 'Admin Servers', 'Delete Allocation', 'adminServers.deleteAllocation', 'DELETE', '/api/admin/servers/{serverUuid}/allocations/{allocationUuid}', 'Delete a server allocation', ['serverUuid', 'allocationUuid']),
 	op('adminServers', 'Admin Servers', 'Delete Mount Link', 'adminServers.deleteMountLink', 'DELETE', '/api/admin/servers/{serverUuid}/mounts/{mountUuid}', 'Detach a mount from a server', ['serverUuid', 'mountUuid']),
 	op('adminServers', 'Admin Servers', 'Get', 'adminServers.get', 'GET', '/api/admin/servers/{serverUuid}', 'Get a server as admin', ['serverUuid']),
@@ -268,6 +394,13 @@ export const operations: OperationSpec[] = [
 	op('adminServers', 'Admin Servers', 'Update Variables', 'adminServers.updateVariables', 'PUT', '/api/admin/servers/{serverUuid}/variables', 'Update server variables as admin', ['serverUuid']),
 	op('adminServers', 'Admin Servers', 'Deploy', 'adminServers.deploy', 'POST', '/api/admin/servers/deploy', 'Deploy a server'),
 	op('adminServers', 'Admin Servers', 'Get By External ID', 'adminServers.getByExternalId', 'GET', '/api/admin/servers/external/{externalServerId}', 'Get a server by external ID', ['externalServerId']),
+	op('adminServers', 'Admin Servers', 'Create Device Link', 'adminServers.createDeviceLink', 'POST', '/api/admin/servers/{serverUuid}/devices', 'Attach a device to a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Delete Device Link', 'adminServers.deleteDeviceLink', 'DELETE', '/api/admin/servers/{serverUuid}/devices/{deviceUuid}', 'Detach a device from a server', ['serverUuid', 'deviceUuid']),
+	op('adminServers', 'Admin Servers', 'Delete Failed Backups', 'adminServers.deleteFailedBackups', 'POST', '/api/admin/servers/{serverUuid}/backups/delete-failed', 'Queue deletion of all failed backups of a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Get Available Devices', 'adminServers.getAvailableDevices', 'GET', '/api/admin/servers/{serverUuid}/devices/available', 'List devices that can be attached to a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Get Database Instances', 'adminServers.getDatabaseInstances', 'GET', '/api/admin/servers/{serverUuid}/databases/instances', 'List database instances of a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Get Databases', 'adminServers.getDatabases', 'GET', '/api/admin/servers/{serverUuid}/databases', 'List databases of a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Get Devices', 'adminServers.getDevices', 'GET', '/api/admin/servers/{serverUuid}/devices', 'List devices attached to a server', ['serverUuid']),
 
 	op('adminSettings', 'Admin Settings', 'Get', 'adminSettings.get', 'GET', '/api/admin/settings', 'Get admin settings'),
 	op('adminSettings', 'Admin Settings', 'Get Email Template', 'adminSettings.getEmailTemplate', 'GET', '/api/admin/system/email/templates/{templateIdentifier}', 'Get an email template', ['templateIdentifier']),
@@ -275,6 +408,14 @@ export const operations: OperationSpec[] = [
 	op('adminSettings', 'Admin Settings', 'Test Email', 'adminSettings.testEmail', 'POST', '/api/admin/system/email/test', 'Send a system email test'),
 	op('adminSettings', 'Admin Settings', 'Update', 'adminSettings.update', 'PUT', '/api/admin/settings', 'Update admin settings'),
 	op('adminSettings', 'Admin Settings', 'Update Email Template', 'adminSettings.updateEmailTemplate', 'PUT', '/api/admin/system/email/templates/{templateIdentifier}', 'Update an email template', ['templateIdentifier']),
+	op('adminSettings', 'Admin Settings', 'Create Email Template Variable', 'adminSettings.createEmailTemplateVariable', 'POST', '/api/admin/system/email/templates/{templateIdentifier}/variables', 'Create a variable for an email template', ['templateIdentifier']),
+	op('adminSettings', 'Admin Settings', 'Create Email Variable', 'adminSettings.createEmailVariable', 'POST', '/api/admin/system/email/variables', 'Create a global email variable'),
+	op('adminSettings', 'Admin Settings', 'Delete Email Template Variable', 'adminSettings.deleteEmailTemplateVariable', 'DELETE', '/api/admin/system/email/templates/{templateIdentifier}/variables/{emailVariableName}', 'Delete a variable of an email template', ['templateIdentifier', 'emailVariableName']),
+	op('adminSettings', 'Admin Settings', 'Delete Email Variable', 'adminSettings.deleteEmailVariable', 'DELETE', '/api/admin/system/email/variables/{emailVariableName}', 'Delete a global email variable', ['emailVariableName']),
+	op('adminSettings', 'Admin Settings', 'Get Email Template Variables', 'adminSettings.getEmailTemplateVariables', 'GET', '/api/admin/system/email/templates/{templateIdentifier}/variables', 'List variables of an email template', ['templateIdentifier']),
+	op('adminSettings', 'Admin Settings', 'Get Email Variables', 'adminSettings.getEmailVariables', 'GET', '/api/admin/system/email/variables', 'List global email variables'),
+	op('adminSettings', 'Admin Settings', 'Update Email Template Variable', 'adminSettings.updateEmailTemplateVariable', 'PUT', '/api/admin/system/email/templates/{templateIdentifier}/variables/{emailVariableName}', 'Update a variable of an email template', ['templateIdentifier', 'emailVariableName']),
+	op('adminSettings', 'Admin Settings', 'Update Email Variable', 'adminSettings.updateEmailVariable', 'PUT', '/api/admin/system/email/variables/{emailVariableName}', 'Update a global email variable', ['emailVariableName']),
 
 	op('adminStats', 'Admin Stats', 'Get Backup Stats', 'adminStats.getBackup', 'GET', '/api/admin/stats/backups', 'Get backup statistics'),
 	op('adminStats', 'Admin Stats', 'Get General Stats', 'adminStats.getGeneral', 'GET', '/api/admin/stats/general', 'Get general admin statistics'),
@@ -290,6 +431,28 @@ export const operations: OperationSpec[] = [
 	op('adminSystem', 'Admin System', 'Get Updates', 'adminSystem.getUpdates', 'GET', '/api/admin/system/updates', 'Get available updates'),
 	op('adminSystem', 'Admin System', 'Recheck Updates', 'adminSystem.recheckUpdates', 'POST', '/api/admin/system/updates/recheck', 'Recheck available updates'),
 	op('adminSystem', 'Admin System', 'Set Debug Mode', 'adminSystem.setDebugMode', 'POST', '/api/admin/system/debug', 'Set debug mode'),
+	op('adminSystem', 'Admin System', 'Get Database Agent Host Updates', 'adminSystem.getDatabaseAgentHostUpdates', 'GET', '/api/admin/system/updates/database-agent-hosts', 'List available database agent host updates'),
+
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Create', 'adminSystemBackupPolicies.create', 'POST', '/api/admin/system-backup-policies', 'Create a system backup policy'),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Create Database Agent Host Link', 'adminSystemBackupPolicies.createDatabaseAgentHostLink', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/database-agent-hosts', 'Add a database agent host to a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Create Location Link', 'adminSystemBackupPolicies.createLocationLink', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/locations', 'Add a location to a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Create Node Link', 'adminSystemBackupPolicies.createNodeLink', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/nodes', 'Add a node to a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Create Server Link', 'adminSystemBackupPolicies.createServerLink', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/servers', 'Add a server to a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete', 'adminSystemBackupPolicies.delete', 'DELETE', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}', 'Delete a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete Database Agent Host Link', 'adminSystemBackupPolicies.deleteDatabaseAgentHostLink', 'DELETE', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/database-agent-hosts/{databaseAgentHostUuid}', 'Remove a database agent host from a system backup policy', ['systemBackupPolicyUuid', 'databaseAgentHostUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete Failed Backups', 'adminSystemBackupPolicies.deleteFailedBackups', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/backups/delete-failed', 'Queue deletion of all failed backups of a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete Location Link', 'adminSystemBackupPolicies.deleteLocationLink', 'DELETE', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/locations/{locationUuid}', 'Remove a location from a system backup policy', ['systemBackupPolicyUuid', 'locationUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete Node Link', 'adminSystemBackupPolicies.deleteNodeLink', 'DELETE', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/nodes/{nodeUuid}', 'Remove a node from a system backup policy', ['systemBackupPolicyUuid', 'nodeUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Delete Server Link', 'adminSystemBackupPolicies.deleteServerLink', 'DELETE', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/servers/{serverUuid}', 'Remove a server from a system backup policy', ['systemBackupPolicyUuid', 'serverUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get', 'adminSystemBackupPolicies.get', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}', 'Get a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Backups', 'adminSystemBackupPolicies.getBackups', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/backups', 'List backups created by a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Database Agent Hosts', 'adminSystemBackupPolicies.getDatabaseAgentHosts', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/database-agent-hosts', 'List database agent hosts in a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Locations', 'adminSystemBackupPolicies.getLocations', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/locations', 'List locations in a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Many', 'adminSystemBackupPolicies.getMany', 'GET', '/api/admin/system-backup-policies', 'List system backup policies'),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Nodes', 'adminSystemBackupPolicies.getNodes', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/nodes', 'List nodes in a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Servers', 'adminSystemBackupPolicies.getServers', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/servers', 'List servers in a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Trigger', 'adminSystemBackupPolicies.trigger', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/trigger', 'Run a system backup policy now', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Update', 'adminSystemBackupPolicies.update', 'PATCH', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}', 'Update a system backup policy', ['systemBackupPolicyUuid']),
 
 	op('adminUsers', 'Admin Users', 'Create', 'adminUsers.create', 'POST', '/api/admin/users', 'Create a user'),
 	op('adminUsers', 'Admin Users', 'Create OAuth Link', 'adminUsers.createOAuthLink', 'POST', '/api/admin/users/{userUuid}/oauth-links', 'Create a user OAuth link', ['userUuid']),
@@ -305,6 +468,7 @@ export const operations: OperationSpec[] = [
 	op('adminUsers', 'Admin Users', 'Update', 'adminUsers.update', 'PATCH', '/api/admin/users/{userUuid}', 'Update a user', ['userUuid']),
 	op('adminUsers', 'Admin Users', 'Get By External ID', 'adminUsers.getByExternalId', 'GET', '/api/admin/users/external/{externalUserId}', 'Get a user by external ID', ['externalUserId']),
 	op('adminUsers', 'Admin Users', 'Get OAuth Link', 'adminUsers.getOAuthLink', 'GET', '/api/admin/users/{userUuid}/oauth-links/{oauthLinkUuid}', 'Get a user OAuth link', ['userUuid', 'oauthLinkUuid']),
+	op('adminUsers', 'Admin Users', 'Verify Email', 'adminUsers.verifyEmail', 'POST', '/api/admin/users/{userUuid}/email/verify', 'Mark the email address of a user as verified', ['userUuid']),
 
 	op('clientAccount', 'Client Account', 'Delete API Key', 'clientAccount.deleteApiKey', 'DELETE', '/api/client/account/api-keys/{apiKeyUuid}', 'Delete an API key', ['apiKeyUuid']),
 	op('clientAccount', 'Client Account', 'Delete Command Snippet', 'clientAccount.deleteCommandSnippet', 'DELETE', '/api/client/account/command-snippets/{commandSnippetUuid}', 'Delete a command snippet', ['commandSnippetUuid']),
@@ -342,6 +506,16 @@ export const operations: OperationSpec[] = [
 	op('clientAccount', 'Client Account', 'Disable Two-Factor', 'clientAccount.disableTwoFactor', 'DELETE', '/api/client/account/two-factor', 'Disable two-factor authentication'),
 	op('clientAccount', 'Client Account', 'Get Two-Factor', 'clientAccount.getTwoFactor', 'GET', '/api/client/account/two-factor', 'Get two-factor authentication setup details'),
 	op('clientAccount', 'Client Account', 'Enable Two-Factor', 'clientAccount.enableTwoFactor', 'POST', '/api/client/account/two-factor', 'Enable two-factor authentication'),
+	op('clientAccount', 'Client Account', 'Delete Sessions', 'clientAccount.deleteSessions', 'DELETE', '/api/client/account/sessions', 'Revoke all other sessions of the account'),
+	op('clientAccount', 'Client Account', 'Disable Email Two-Factor', 'clientAccount.disableEmailTwoFactor', 'DELETE', '/api/client/account/two-factor/email', 'Disable email-based two-factor authentication', [], { hasBody: true }),
+	op('clientAccount', 'Client Account', 'Duplicate API Key', 'clientAccount.duplicateApiKey', 'POST', '/api/client/account/api-keys/{apiKeyUuid}/duplicate', 'Duplicate an API key', ['apiKeyUuid']),
+	op('clientAccount', 'Client Account', 'Duplicate Command Snippet', 'clientAccount.duplicateCommandSnippet', 'POST', '/api/client/account/command-snippets/{commandSnippetUuid}/duplicate', 'Duplicate a command snippet', ['commandSnippetUuid']),
+	op('clientAccount', 'Client Account', 'Enable Email Two-Factor', 'clientAccount.enableEmailTwoFactor', 'POST', '/api/client/account/two-factor/email', 'Enable email-based two-factor authentication'),
+	op('clientAccount', 'Client Account', 'Get API Key By Identifier', 'clientAccount.getApiKeyByIdentifier', 'GET', '/api/client/account/api-keys/identifier/{apiKeyIdentifier}', 'Get an API key by its identifier', ['apiKeyIdentifier']),
+	op('clientAccount', 'Client Account', 'Get Settings', 'clientAccount.getSettings', 'GET', '/api/client/account/settings', 'Get the synced account settings'),
+	op('clientAccount', 'Client Account', 'Resend Verification Email', 'clientAccount.resendVerificationEmail', 'POST', '/api/client/account/email/resend-verification', 'Resend the email address verification email'),
+	op('clientAccount', 'Client Account', 'Update Password Login', 'clientAccount.updatePasswordLogin', 'PUT', '/api/client/account/password-login', 'Enable or disable password login for the account'),
+	op('clientAccount', 'Client Account', 'Update Settings', 'clientAccount.updateSettings', 'PATCH', '/api/client/account/settings', 'Update the synced account settings'),
 
 	op('clientServer', 'Client Server', 'Get', 'clientServer.get', 'GET', '/api/client/servers/{serverUuid}', 'Get a server', ['serverUuid']),
 	op('clientServer', 'Client Server', 'Get Activity', 'clientServer.getActivity', 'GET', '/api/client/servers/{serverUuid}/activity', 'Get server activity', ['serverUuid']),
@@ -368,6 +542,13 @@ export const operations: OperationSpec[] = [
 
 	op('serverAnnouncements', 'Server Announcements', 'Get Many', 'serverAnnouncements.getMany', 'GET', '/api/client/servers/{serverUuid}/announcements', 'List server announcements', ['serverUuid']),
 
+	op('serverBackupGroups', 'Server Backup Groups', 'Create', 'serverBackupGroups.create', 'POST', '/api/client/servers/{serverUuid}/backups/groups', 'Create a backup group', ['serverUuid']),
+	op('serverBackupGroups', 'Server Backup Groups', 'Delete', 'serverBackupGroups.delete', 'DELETE', '/api/client/servers/{serverUuid}/backups/groups/{backupGroupUuid}', 'Delete a backup group', ['serverUuid', 'backupGroupUuid']),
+	op('serverBackupGroups', 'Server Backup Groups', 'Get', 'serverBackupGroups.get', 'GET', '/api/client/servers/{serverUuid}/backups/groups/{backupGroupUuid}', 'Get a backup group', ['serverUuid', 'backupGroupUuid']),
+	op('serverBackupGroups', 'Server Backup Groups', 'Get Many', 'serverBackupGroups.getMany', 'GET', '/api/client/servers/{serverUuid}/backups/groups', 'List backup groups', ['serverUuid']),
+	op('serverBackupGroups', 'Server Backup Groups', 'Update', 'serverBackupGroups.update', 'PATCH', '/api/client/servers/{serverUuid}/backups/groups/{backupGroupUuid}', 'Update a backup group', ['serverUuid', 'backupGroupUuid']),
+	op('serverBackupGroups', 'Server Backup Groups', 'Update Order', 'serverBackupGroups.updateOrder', 'PUT', '/api/client/servers/{serverUuid}/backups/groups/order', 'Update the order of backup groups', ['serverUuid']),
+
 	op('serverBackups', 'Server Backups', 'Start Backup', 'serverBackups.create', 'POST', '/api/client/servers/{serverUuid}/backups', 'Start a backup', ['serverUuid']),
 	op('serverBackups', 'Server Backups', 'Delete', 'serverBackups.delete', 'DELETE', '/api/client/servers/{serverUuid}/backups/{backupUuid}', 'Delete a backup', ['serverUuid', 'backupUuid']),
 	op('serverBackups', 'Server Backups', 'Download', 'serverBackups.download', 'GET', '/api/client/servers/{serverUuid}/backups/{backupUuid}/download', 'Get a backup download URL', ['serverUuid', 'backupUuid']),
@@ -375,6 +556,69 @@ export const operations: OperationSpec[] = [
 	op('serverBackups', 'Server Backups', 'Get Many', 'serverBackups.getMany', 'GET', '/api/client/servers/{serverUuid}/backups', 'List backups', ['serverUuid']),
 	op('serverBackups', 'Server Backups', 'Restore', 'serverBackups.restore', 'POST', '/api/client/servers/{serverUuid}/backups/{backupUuid}/restore', 'Restore a backup', ['serverUuid', 'backupUuid']),
 	op('serverBackups', 'Server Backups', 'Update', 'serverBackups.update', 'PATCH', '/api/client/servers/{serverUuid}/backups/{backupUuid}', 'Update a backup', ['serverUuid', 'backupUuid']),
+	op('serverBackups', 'Server Backups', 'Clear Failed Restore', 'serverBackups.clearFailedRestore', 'POST', '/api/client/servers/{serverUuid}/backups/unlock', 'Clear the failed backup restore state of a server', ['serverUuid']),
+	op('serverBackups', 'Server Backups', 'Delete Many', 'serverBackups.deleteMany', 'DELETE', '/api/client/servers/{serverUuid}/backups', 'Delete multiple backups', ['serverUuid'], { hasBody: true }),
+	op('serverBackups', 'Server Backups', 'Export', 'serverBackups.export', 'POST', '/api/client/servers/{serverUuid}/backups/{backupUuid}/export', 'Export a backup to the server file system', ['serverUuid', 'backupUuid']),
+	op('serverBackups', 'Server Backups', 'Get System Backups', 'serverBackups.getSystemBackups', 'GET', '/api/client/servers/{serverUuid}/backups/system', 'List backups created by system backup policies', ['serverUuid']),
+	op('serverBackups', 'Server Backups', 'Get Usage', 'serverBackups.getUsage', 'GET', '/api/client/servers/{serverUuid}/backups/usage', 'Get backup storage usage', ['serverUuid']),
+	op('serverBackups', 'Server Backups', 'Query', 'serverBackups.query', 'GET', '/api/client/servers/{serverUuid}/backups/{backupUuid}/query', 'Get the archive format and size of a backup', ['serverUuid', 'backupUuid']),
+	op('serverBackups', 'Server Backups', 'Update Many', 'serverBackups.updateMany', 'PATCH', '/api/client/servers/{serverUuid}/backups', 'Update multiple backups', ['serverUuid']),
+
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Run Query', 'serverDatabaseExplorer.runQuery', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/query', 'Run an SQL query against a database', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Get Rows', 'serverDatabaseExplorer.getRows', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/rows', 'Browse the rows of a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Insert Rows', 'serverDatabaseExplorer.insertRows', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/rows/insert', 'Insert rows into a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Update Rows', 'serverDatabaseExplorer.updateRows', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/rows/update', 'Update rows in a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Delete Rows', 'serverDatabaseExplorer.deleteRows', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/rows/delete', 'Delete rows from a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Get Schema', 'serverDatabaseExplorer.getSchema', 'GET', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/schema', 'Get the database schema', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Get Column Types', 'serverDatabaseExplorer.getColumnTypes', 'GET', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/types', 'List the column types supported by the database', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Create Table', 'serverDatabaseExplorer.createTable', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables', 'Create a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Rename Table', 'serverDatabaseExplorer.renameTable', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/rename', 'Rename a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Delete Table', 'serverDatabaseExplorer.deleteTable', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/delete', 'Delete a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Create Column', 'serverDatabaseExplorer.createColumn', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/columns', 'Add a column to a table', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Rename Column', 'serverDatabaseExplorer.renameColumn', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/columns/rename', 'Rename a table column', ['serverUuid', 'databaseUuid']),
+	op('serverDatabaseExplorer', 'Server Database Explorer', 'Delete Column', 'serverDatabaseExplorer.deleteColumn', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/explorer/tables/columns/delete', 'Delete a table column', ['serverUuid', 'databaseUuid']),
+
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Run Query', 'serverDatabaseInstanceExplorer.runQuery', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/query', 'Run an SQL query against a database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Get Rows', 'serverDatabaseInstanceExplorer.getRows', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/rows', 'Browse the rows of a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Insert Rows', 'serverDatabaseInstanceExplorer.insertRows', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/rows/insert', 'Insert rows into a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Update Rows', 'serverDatabaseInstanceExplorer.updateRows', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/rows/update', 'Update rows in a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Delete Rows', 'serverDatabaseInstanceExplorer.deleteRows', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/rows/delete', 'Delete rows from a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Get Schema', 'serverDatabaseInstanceExplorer.getSchema', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/schema', 'Get the database schema', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Get Column Types', 'serverDatabaseInstanceExplorer.getColumnTypes', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/types', 'List the column types supported by the database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Create Table', 'serverDatabaseInstanceExplorer.createTable', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables', 'Create a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Rename Table', 'serverDatabaseInstanceExplorer.renameTable', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/rename', 'Rename a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Delete Table', 'serverDatabaseInstanceExplorer.deleteTable', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/delete', 'Delete a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Create Column', 'serverDatabaseInstanceExplorer.createColumn', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/columns', 'Add a column to a table', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Rename Column', 'serverDatabaseInstanceExplorer.renameColumn', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/columns/rename', 'Rename a table column', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstanceExplorer', 'Server Database Instance Explorer', 'Delete Column', 'serverDatabaseInstanceExplorer.deleteColumn', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/explorer/tables/columns/delete', 'Delete a table column', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+
+	op('serverDatabaseInstances', 'Server Database Instances', 'Cancel Operation', 'serverDatabaseInstances.cancelOperation', 'DELETE', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/operations/{operationUuid}', 'Cancel a database instance operation', ['serverUuid', 'databaseInstanceUuid', 'operationUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Create', 'serverDatabaseInstances.create', 'POST', '/api/client/servers/{serverUuid}/databases/instances', 'Create a database instance', ['serverUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Create Database', 'serverDatabaseInstances.createDatabase', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases', 'Create a database in a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Create User', 'serverDatabaseInstances.createUser', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users', 'Create a database instance user', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Delete', 'serverDatabaseInstances.delete', 'DELETE', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}', 'Delete a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Delete Database', 'serverDatabaseInstances.deleteDatabase', 'DELETE', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}', 'Delete a database from a database instance', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Delete User', 'serverDatabaseInstances.deleteUser', 'DELETE', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users/{databaseUserUuid}', 'Delete a database instance user', ['serverUuid', 'databaseInstanceUuid', 'databaseUserUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Export', 'serverDatabaseInstances.export', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/export', 'Export the data of a Redis database instance as a file', ['serverUuid', 'databaseInstanceUuid'], { response: 'binary' }),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Export Database', 'serverDatabaseInstances.exportDatabase', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/export', 'Export a database as a file', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid'], { response: 'binary' }),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get', 'serverDatabaseInstances.get', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}', 'Get a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Database Size', 'serverDatabaseInstances.getDatabaseSize', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/size', 'Get the size of a database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Databases', 'serverDatabaseInstances.getDatabases', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases', 'List databases in a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Logs', 'serverDatabaseInstances.getLogs', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/logs', 'Get database instance logs', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Many', 'serverDatabaseInstances.getMany', 'GET', '/api/client/servers/{serverUuid}/databases/instances', 'List database instances', ['serverUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Resources', 'serverDatabaseInstances.getResources', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/resources', 'Get database instance resource usage', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Templates', 'serverDatabaseInstances.getTemplates', 'GET', '/api/client/servers/{serverUuid}/databases/instances/templates', 'List templates available for new database instances', ['serverUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Get Users', 'serverDatabaseInstances.getUsers', 'GET', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users', 'List database instance users', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Import', 'serverDatabaseInstances.import', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/import', 'Import a data file into a Redis database instance', ['serverUuid', 'databaseInstanceUuid'], { body: 'binary' }),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Import Database', 'serverDatabaseInstances.importDatabase', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/import', 'Import a dump file into a database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid'], { body: 'binary' }),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Import Database From URL', 'serverDatabaseInstances.importDatabaseFromUrl', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/import/remote', 'Import a dump file from a URL into a database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Recreate Database', 'serverDatabaseInstances.recreateDatabase', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/databases/{databaseUuid}/recreate', 'Drop and recreate a database', ['serverUuid', 'databaseInstanceUuid', 'databaseUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Rotate User Password', 'serverDatabaseInstances.rotateUserPassword', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users/{databaseUserUuid}/rotate-password', 'Rotate the password of a database instance user', ['serverUuid', 'databaseInstanceUuid', 'databaseUserUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Set Power State', 'serverDatabaseInstances.setPowerState', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/power', 'Send a power signal to a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Update', 'serverDatabaseInstances.update', 'PATCH', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}', 'Update a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Update From Template', 'serverDatabaseInstances.updateFromTemplate', 'POST', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/update', 'Apply the current template specification to a database instance', ['serverUuid', 'databaseInstanceUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Update User Database Access', 'serverDatabaseInstances.updateUserDatabaseAccess', 'PUT', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users/{databaseUserUuid}/databases/{databaseUuid}', 'Set the access level of a user on one database', ['serverUuid', 'databaseInstanceUuid', 'databaseUserUuid', 'databaseUuid']),
+	op('serverDatabaseInstances', 'Server Database Instances', 'Update User Databases', 'serverDatabaseInstances.updateUserDatabases', 'PUT', '/api/client/servers/{serverUuid}/databases/instances/{databaseInstanceUuid}/users/{databaseUserUuid}/databases', 'Replace the database access list of a user', ['serverUuid', 'databaseInstanceUuid', 'databaseUserUuid']),
 
 	op('serverDatabases', 'Server Databases', 'Create', 'serverDatabases.create', 'POST', '/api/client/servers/{serverUuid}/databases', 'Create a database', ['serverUuid']),
 	op('serverDatabases', 'Server Databases', 'Delete', 'serverDatabases.delete', 'DELETE', '/api/client/servers/{serverUuid}/databases/{databaseUuid}', 'Delete a database', ['serverUuid', 'databaseUuid']),
@@ -385,6 +629,10 @@ export const operations: OperationSpec[] = [
 	op('serverDatabases', 'Server Databases', 'Recreate', 'serverDatabases.recreate', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/recreate', 'Recreate a database', ['serverUuid', 'databaseUuid']),
 	op('serverDatabases', 'Server Databases', 'Rotate Password', 'serverDatabases.rotatePassword', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/rotate-password', 'Rotate database password', ['serverUuid', 'databaseUuid']),
 	op('serverDatabases', 'Server Databases', 'Update', 'serverDatabases.update', 'PATCH', '/api/client/servers/{serverUuid}/databases/{databaseUuid}', 'Update a database', ['serverUuid', 'databaseUuid']),
+
+	op('serverDevices', 'Server Devices', 'Create', 'serverDevices.create', 'POST', '/api/client/servers/{serverUuid}/devices', 'Attach a device to the server', ['serverUuid']),
+	op('serverDevices', 'Server Devices', 'Delete', 'serverDevices.delete', 'DELETE', '/api/client/servers/{serverUuid}/devices/{deviceUuid}', 'Detach a device from the server', ['serverUuid', 'deviceUuid']),
+	op('serverDevices', 'Server Devices', 'Get Many', 'serverDevices.getMany', 'GET', '/api/client/servers/{serverUuid}/devices', 'List devices attached to the server', ['serverUuid']),
 
 	op('serverFiles', 'Server Files', 'Cancel Operation', 'serverFiles.cancelOperation', 'DELETE', '/api/client/servers/{serverUuid}/files/operations/{operationUuid}', 'Cancel a file operation', ['serverUuid', 'operationUuid']),
 	op('serverFiles', 'Server Files', 'Change Permissions', 'serverFiles.chmod', 'PUT', '/api/client/servers/{serverUuid}/files/chmod', 'Change file permissions', ['serverUuid']),
@@ -407,7 +655,16 @@ export const operations: OperationSpec[] = [
 	op('serverFiles', 'Server Files', 'Query Pull', 'serverFiles.queryPull', 'POST', '/api/client/servers/{serverUuid}/files/pull/query', 'Query a remote file pull URL', ['serverUuid']),
 	op('serverFiles', 'Server Files', 'Rename', 'serverFiles.rename', 'PUT', '/api/client/servers/{serverUuid}/files/rename', 'Rename files', ['serverUuid']),
 	op('serverFiles', 'Server Files', 'Search', 'serverFiles.search', 'POST', '/api/client/servers/{serverUuid}/files/search', 'Search server files', ['serverUuid']),
-	op('serverFiles', 'Server Files', 'Write', 'serverFiles.write', 'POST', '/api/client/servers/{serverUuid}/files/write', 'Write file contents', ['serverUuid'], true, true),
+	op('serverFiles', 'Server Files', 'Write', 'serverFiles.write', 'POST', '/api/client/servers/{serverUuid}/files/write', 'Write file contents', ['serverUuid'], { body: 'raw' }),
+	op('serverFiles', 'Server Files', 'Copy Remote Many', 'serverFiles.copyRemoteMany', 'POST', '/api/client/servers/{serverUuid}/files/copy-remote-many', 'Copy multiple files to another server', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Create Symlink', 'serverFiles.createSymlink', 'POST', '/api/client/servers/{serverUuid}/files/create-symlink', 'Create a symbolic link', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Get Directory Sizes', 'serverFiles.getDirectorySizes', 'GET', '/api/client/servers/{serverUuid}/files/directory-sizes', 'Break down a directory by size', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Get Lines', 'serverFiles.getLines', 'GET', '/api/client/servers/{serverUuid}/files/lines', 'Get a range of lines from a file', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Query SQLite', 'serverFiles.querySqlite', 'POST', '/api/client/servers/{serverUuid}/files/sqlite-query', 'Run a query against an SQLite database file', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Stat', 'serverFiles.stat', 'POST', '/api/client/servers/{serverUuid}/files/stat', 'Get metadata for one or more paths', ['serverUuid']),
+
+	op('serverFirewall', 'Server Firewall', 'Get', 'serverFirewall.get', 'GET', '/api/client/servers/{serverUuid}/firewall', 'Get the firewall rules of the server', ['serverUuid']),
+	op('serverFirewall', 'Server Firewall', 'Update', 'serverFirewall.update', 'PUT', '/api/client/servers/{serverUuid}/firewall', 'Replace the firewall rules of the server', ['serverUuid']),
 
 	op('serverMounts', 'Server Mounts', 'Attach', 'serverMounts.attach', 'POST', '/api/client/servers/{serverUuid}/mounts', 'Attach a mount', ['serverUuid']),
 	op('serverMounts', 'Server Mounts', 'Detach', 'serverMounts.detach', 'DELETE', '/api/client/servers/{serverUuid}/mounts/{mountUuid}', 'Detach a mount', ['serverUuid', 'mountUuid']),
@@ -449,6 +706,15 @@ export const operations: OperationSpec[] = [
 	op('serverSubusers', 'Server Subusers', 'Get Many', 'serverSubusers.getMany', 'GET', '/api/client/servers/{serverUuid}/subusers', 'List subusers', ['serverUuid']),
 	op('serverSubusers', 'Server Subusers', 'Update', 'serverSubusers.update', 'PATCH', '/api/client/servers/{serverUuid}/subusers/{subuserUuid}', 'Update a subuser', ['serverUuid', 'subuserUuid']),
 
+	op('serverTunnel', 'Server Tunnel', 'Create', 'serverTunnel.create', 'POST', '/api/client/servers/{serverUuid}/tunnel', 'Enable the private network tunnel for the server', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Create Connection', 'serverTunnel.createConnection', 'POST', '/api/client/servers/{serverUuid}/tunnel/connections', 'Connect the server to another server', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Delete', 'serverTunnel.delete', 'DELETE', '/api/client/servers/{serverUuid}/tunnel', 'Disable the private network tunnel for the server', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Delete Connection', 'serverTunnel.deleteConnection', 'DELETE', '/api/client/servers/{serverUuid}/tunnel/connections/{connectionUuid}', 'Disconnect the server from another server', ['serverUuid', 'connectionUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Get', 'serverTunnel.get', 'GET', '/api/client/servers/{serverUuid}/tunnel', 'Get the tunnel configuration of the server', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Get Available Connections', 'serverTunnel.getAvailableConnections', 'GET', '/api/client/servers/{serverUuid}/tunnel/connections/available', 'List servers the server can connect to', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Update', 'serverTunnel.update', 'PATCH', '/api/client/servers/{serverUuid}/tunnel', 'Update the tunnel configuration of the server', ['serverUuid']),
+	op('serverTunnel', 'Server Tunnel', 'Update Ports', 'serverTunnel.updatePorts', 'PUT', '/api/client/servers/{serverUuid}/tunnel/ports', 'Replace the exposed tunnel ports', ['serverUuid']),
+
 	op('system', 'System', 'Get Announcements', 'system.getAnnouncements', 'GET', '/api/announcements', 'Get public announcements'),
 	op('system', 'System', 'Get OpenAPI Document', 'system.getOpenApi', 'GET', '/openapi.json', 'Get the Panel OpenAPI document'),
 	op('system', 'System', 'Get Languages', 'system.getLanguages', 'GET', '/api/languages', 'List available languages'),
@@ -464,22 +730,27 @@ export const customOperation: OperationSpec = op(
 	'',
 	'Make a custom Calagopus API request',
 	[],
-	true,
+	{ hasBody: true },
 );
 
 const allOperations = [...operations, customOperation];
 
 const operationValuesUsing = (identifier: IdentifierName): string[] =>
 	allOperations
-		.filter((operation) => operation.identifiers?.includes(identifier))
+		.filter((operation) => operation.identifiers.includes(identifier))
 		.map((operation) => operation.value);
 
-const bodyOperationValues = allOperations
-	.filter((operation) => operation.hasBody)
-	.map((operation) => operation.value);
+const operationValuesWithBody = (format: BodyFormat): string[] =>
+	allOperations
+		.filter((operation) => operation.hasBody && operation.body === format)
+		.map((operation) => operation.value);
 
-const rawBodyOperationValues = allOperations
-	.filter((operation) => operation.rawBody)
+const jsonBodyOperationValues = operationValuesWithBody('json');
+const rawBodyOperationValues = operationValuesWithBody('raw');
+const textBodyOperationValues = [...jsonBodyOperationValues, ...rawBodyOperationValues];
+const binaryBodyOperationValues = operationValuesWithBody('binary');
+const binaryResponseOperationValues = allOperations
+	.filter((operation) => operation.response === 'binary')
 	.map((operation) => operation.value);
 
 const showForJsonBody = (operation: string[]) => ({
@@ -502,7 +773,12 @@ const structuredBodyProperties: INodeProperties[] = [
 		name: 'powerAction',
 		type: 'options',
 		required: true,
-		displayOptions: { show: showForJsonBody(['clientServer.setPowerState']) },
+		displayOptions: {
+			show: showForJsonBody([
+				'clientServer.setPowerState',
+				'serverDatabaseInstances.setPowerState',
+			]),
+		},
 		options: [
 			{ name: 'Kill', value: 'kill' },
 			{ name: 'Restart', value: 'restart' },
@@ -531,6 +807,14 @@ const structuredBodyProperties: INodeProperties[] = [
 		default: '',
 		placeholder: '*.log\ncache/\ntmp/**',
 		description: 'Files or patterns to exclude from the backup, one per line',
+	},
+	{
+		displayName: 'Backup Group UUID',
+		name: 'backupGroupUuidBody',
+		type: 'string',
+		displayOptions: { show: showForJsonBody(['serverBackups.create']) },
+		default: '',
+		description: 'The backup group to create the backup in. Leave empty for no group.',
 	},
 	{
 		displayName: 'Locked',
@@ -711,6 +995,10 @@ const identifierLabels: Record<IdentifierName, { displayName: string; descriptio
 		displayName: 'Announcement UUID',
 		description: 'The announcement UUID',
 	},
+	apiKeyIdentifier: {
+		displayName: 'API Key Identifier',
+		description: 'The API key identifier',
+	},
 	apiKeyUuid: {
 		displayName: 'API Key UUID',
 		description: 'The API key UUID',
@@ -718,6 +1006,10 @@ const identifierLabels: Record<IdentifierName, { displayName: string; descriptio
 	backupConfigurationUuid: {
 		displayName: 'Backup Configuration UUID',
 		description: 'The backup configuration UUID',
+	},
+	backupGroupUuid: {
+		displayName: 'Backup Group UUID',
+		description: 'The backup group UUID',
 	},
 	backupUuid: {
 		displayName: 'Backup UUID',
@@ -727,13 +1019,37 @@ const identifierLabels: Record<IdentifierName, { displayName: string; descriptio
 		displayName: 'Command Snippet UUID',
 		description: 'The command snippet UUID',
 	},
+	connectionUuid: {
+		displayName: 'Connected Server UUID',
+		description: 'The UUID of the connected server',
+	},
+	databaseAgentHostUuid: {
+		displayName: 'Database Agent Host UUID',
+		description: 'The database agent host UUID',
+	},
+	databaseAgentTemplateUuid: {
+		displayName: 'Database Agent Template UUID',
+		description: 'The database agent template UUID',
+	},
 	databaseHostUuid: {
 		displayName: 'Database Host UUID',
 		description: 'The database host UUID',
 	},
+	databaseInstanceUuid: {
+		displayName: 'Database Instance UUID',
+		description: 'The database instance UUID',
+	},
+	databaseUserUuid: {
+		displayName: 'Database User UUID',
+		description: 'The database instance user UUID',
+	},
 	databaseUuid: {
 		displayName: 'Database UUID',
 		description: 'The database UUID',
+	},
+	deviceUuid: {
+		displayName: 'Device UUID',
+		description: 'The device UUID',
 	},
 	eggConfigurationUuid: {
 		displayName: 'Egg Configuration UUID',
@@ -746,6 +1062,10 @@ const identifierLabels: Record<IdentifierName, { displayName: string; descriptio
 	eggUuid: {
 		displayName: 'Egg UUID',
 		description: 'The egg UUID',
+	},
+	emailVariableName: {
+		displayName: 'Email Variable Name',
+		description: 'The email variable name',
 	},
 	extensionPackageName: {
 		displayName: 'Extension Package Name',
@@ -847,6 +1167,10 @@ const identifierLabels: Record<IdentifierName, { displayName: string; descriptio
 		displayName: 'Subuser UUID',
 		description: 'The subuser UUID',
 	},
+	systemBackupPolicyUuid: {
+		displayName: 'System Backup Policy UUID',
+		description: 'The system backup policy UUID',
+	},
 	templateIdentifier: {
 		displayName: 'Template Identifier',
 		description: 'The email template identifier',
@@ -934,7 +1258,7 @@ export const commonProperties: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: {
 			show: {
-				operation: bodyOperationValues,
+				operation: jsonBodyOperationValues,
 			},
 		},
 		options: [
@@ -944,6 +1268,51 @@ export const commonProperties: INodeProperties[] = [
 		],
 		default: 'json',
 	},
+	{
+		displayName: 'Body Mode',
+		name: 'bodyMode',
+		type: 'options',
+		noDataExpression: true,
+		displayOptions: {
+			show: {
+				operation: rawBodyOperationValues,
+			},
+		},
+		options: [
+			{ name: 'Raw Text', value: 'raw' },
+			{ name: 'JSON', value: 'json' },
+			{ name: 'None', value: 'none' },
+		],
+		default: 'raw',
+	},
+	{
+		displayName: 'Input Binary Field',
+		name: 'binaryPropertyName',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				operation: binaryBodyOperationValues,
+			},
+		},
+		default: 'data',
+		hint: 'The name of the input binary field containing the file to upload',
+		description: 'The binary field of the input item whose contents are sent as the request body',
+	},
+	{
+		displayName: 'Put Output File in Field',
+		name: 'binaryOutputPropertyName',
+		type: 'string',
+		required: true,
+		displayOptions: {
+			show: {
+				operation: binaryResponseOperationValues,
+			},
+		},
+		default: 'data',
+		hint: 'The name of the output binary field to put the downloaded file in',
+		description: 'The binary field of the output item that receives the downloaded file',
+	},
 	...structuredBodyProperties,
 	{
 		displayName: 'Body JSON',
@@ -952,7 +1321,7 @@ export const commonProperties: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				bodyMode: ['json'],
-				operation: bodyOperationValues,
+				operation: textBodyOperationValues,
 			},
 		},
 		default: '{}',
@@ -968,7 +1337,7 @@ export const commonProperties: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				bodyMode: ['raw'],
-				operation: bodyOperationValues,
+				operation: textBodyOperationValues,
 			},
 		},
 		default: '',
@@ -1008,9 +1377,5 @@ export const commonProperties: INodeProperties[] = [
 		],
 	},
 ];
-
-export const defaultBodyModeByOperation = new Map(
-	rawBodyOperationValues.map((operationValue) => [operationValue, 'raw']),
-);
 
 export const operationByValue = new Map(allOperations.map((operation) => [operation.value, operation]));

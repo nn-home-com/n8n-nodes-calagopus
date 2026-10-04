@@ -1,0 +1,68 @@
+name: API drift
+
+# Checks the node against the latest Calagopus Panel release, so new or changed
+# endpoints are noticed without waiting for a user report.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  npm_config_fetch_retries: '5'
+  npm_config_fetch_retry_mintimeout: '20000'
+  npm_config_fetch_retry_maxtimeout: '120000'
+
+jobs:
+  drift:
+    name: Compare with latest panel release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: 'npm ci --ignore-scripts'
+
+      - name: Run build
+        run: 'npm run build'
+
+      - name: Resolve latest panel release
+        id: panel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "tag=$(gh release view --repo calagopus/panel --json tagName --jq .tagName)" >> "$GITHUB_OUTPUT"
+
+      - name: Check out Calagopus Panel ${{ steps.panel.outputs.tag }}
+        uses: actions/checkout@v6
+        with:
+          repository: calagopus/panel
+          ref: ${{ steps.panel.outputs.tag }}
+          path: .panel
+          sparse-checkout: backend/src/routes
+
+      - name: Compare operations with panel routes
+        run: |
+          set +e
+          report=$(npm run --silent api:coverage -- .panel --strict 2>&1)
+          status=$?
+          set -e
+
+          echo "$report"
+          {
+            echo "## API coverage against ${{ steps.panel.outputs.tag }}"
+            echo
+            echo '```'
+            echo "$report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"

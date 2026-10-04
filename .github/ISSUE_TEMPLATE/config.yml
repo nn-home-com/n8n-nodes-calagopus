@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Calagopus Panel issues
+    url: https://github.com/calagopus/panel/issues
+    about: Problems with the panel itself rather than this n8n node.
+  - name: Security vulnerability
+    url: https://github.com/nn-home-com/n8n-nodes-calagopus/security/advisories/new
+    about: Report security issues privately.

@@ -1,0 +1,25 @@
+name: Endpoint request
+description: A Calagopus Panel endpoint is missing or has changed.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Until the endpoint is added, you can call it with the **Custom Request** resource.
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint
+      placeholder: POST /api/client/servers/{server}/files/stat
+    validations:
+      required: true
+  - type: input
+    id: panel-version
+    attributes:
+      label: Panel version that introduced or changed it
+      placeholder: 1.2.4
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What do you want to automate with it?
