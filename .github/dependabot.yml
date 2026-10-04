@@ -9,6 +9,15 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Major versions of the toolchain (TypeScript, ESLint, @n8n/node-cli) depend
+    # on each other and on the n8n node build setup, so they are upgraded together
+    # by hand rather than through automated pull requests.
+    # @n8n/node-cli is still 0.x, where minor versions may contain breaking changes.
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@n8n/node-cli'
+        update-types: ['version-update:semver-minor']
     groups:
       dev-dependencies:
         dependency-type: development
