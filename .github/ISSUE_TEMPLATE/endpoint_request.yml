@@ -17,7 +17,7 @@ body:
     id: panel-version
     attributes:
       label: Panel version that introduced or changed it
-      placeholder: 1.2.4
+      placeholder: 1.2.8
   - type: textarea
     id: use-case
     attributes:

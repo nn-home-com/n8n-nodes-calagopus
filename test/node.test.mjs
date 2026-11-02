@@ -115,6 +115,66 @@ describe('Calagopus node', () => {
 		assert.deepEqual(requests[0].body, { action: 'restart' });
 	});
 
+	it('always sends the required force flag when retrying failed backup deletions', async () => {
+		const { context, requests } = createContext({
+			parameters: {
+				operation: 'adminNodes.retryFailedDeletions',
+				nodeUuid: 'n1',
+				queryJson: '{}',
+				additionalOptions: {},
+				bodyMode: 'json',
+				bodyJson: '{"detached": true}',
+			},
+			respond: () => ({ queued: 2 }),
+		});
+
+		await run(context);
+
+		assert.equal(requests[0].url, '/api/admin/nodes/n1/backups/retry-failed-deletions');
+		assert.deepEqual(requests[0].body, { force: false, detached: true });
+	});
+
+	it('deletes selected trash entries', async () => {
+		const { context, requests } = createContext({
+			parameters: {
+				operation: 'serverFiles.deleteTrash',
+				serverUuid: 's1',
+				queryJson: '{}',
+				additionalOptions: {},
+				bodyMode: 'json',
+				trashSelector: 'uuids',
+				trashEntryUuids: 't1\n\n t2 \n',
+				bodyJson: '{}',
+			},
+			respond: () => ({ deleted: 2 }),
+		});
+
+		await run(context);
+
+		assert.equal(requests[0].method, 'DELETE');
+		assert.equal(requests[0].url, '/api/client/servers/s1/files/trash');
+		assert.deepEqual(requests[0].body, { selector: { type: 'uuids', uuids: ['t1', 't2'] } });
+	});
+
+	it('empties the whole trash', async () => {
+		const { context, requests } = createContext({
+			parameters: {
+				operation: 'serverFiles.deleteTrash',
+				serverUuid: 's1',
+				queryJson: '{}',
+				additionalOptions: {},
+				bodyMode: 'json',
+				trashSelector: 'all',
+				bodyJson: '{}',
+			},
+			respond: () => ({ deleted: 5 }),
+		});
+
+		await run(context);
+
+		assert.deepEqual(requests[0].body, { selector: { type: 'all' } });
+	});
+
 	it('defaults file writes to a raw text body', async () => {
 		const { context, requests } = createContext({
 			parameters: {

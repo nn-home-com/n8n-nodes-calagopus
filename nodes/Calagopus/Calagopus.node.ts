@@ -216,6 +216,28 @@ function buildStructuredBody(
 			);
 			break;
 
+		case 'adminBackupConfigurations.retryFailedDeletions':
+		case 'adminDatabaseAgentHosts.retryFailedDeletions':
+		case 'adminNodes.retryFailedDeletions':
+		case 'adminServers.retryFailedDeletions':
+		case 'adminSystemBackupPolicies.retryFailedDeletions':
+			body.force = this.getNodeParameter('retryDeletionsForce', itemIndex, false) as boolean;
+			break;
+
+		case 'serverFiles.deleteTrash': {
+			const selector = this.getNodeParameter('trashSelector', itemIndex, 'uuids') as string;
+			body.selector =
+				selector === 'all'
+					? { type: 'all' }
+					: {
+							type: 'uuids',
+							uuids: parseMultilineList(
+								this.getNodeParameter('trashEntryUuids', itemIndex, '') as string,
+							),
+						};
+			break;
+		}
+
 		case 'serverStartup.updateCommand':
 			addStringIfNotEmpty(
 				body,

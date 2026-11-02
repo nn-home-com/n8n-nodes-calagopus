@@ -45,7 +45,7 @@
     ]
   },
   "calagopus": {
-    "panelVersion": "1.2.4"
+    "panelVersion": "1.2.8"
   },
   "devDependencies": {
     "@n8n/node-cli": "^0.32.1",

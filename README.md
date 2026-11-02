@@ -47,7 +47,7 @@ The key's permissions decide which operations succeed. Admin operations require 
 
 ## Operations
 
-The node covers every user-facing endpoint of the Calagopus Panel API, which is 559 operations across 43 resources. Coverage is checked in CI against the [supported panel version](#compatibility).
+The node covers every user-facing endpoint of the Calagopus Panel API, which is 589 operations across 43 resources. Coverage is checked in CI against the [supported panel version](#compatibility).
 
 | Area    | Resources |
 | ------- | --------- |
@@ -96,7 +96,7 @@ By default, HTTP errors fail the item. Under **Additional Options** you can enab
 
 | Component       | Supported version                              |
 | --------------- | ---------------------------------------------- |
-| Calagopus Panel | 1.2.4 (operations are verified against its routes) |
+| Calagopus Panel | 1.2.8 (operations are verified against its routes) |
 | n8n             | Self-hosted instances with community node support |
 
 Older panel releases work for every endpoint they already provide. Calling an endpoint that your panel does not have yet returns `404 Not Found`.
@@ -118,7 +118,7 @@ npm test          # unit tests (requires a build)
 To check the node against a Calagopus Panel checkout:
 
 ```bash
-git clone --depth 1 --branch release-1.2.4 https://github.com/calagopus/panel.git ../panel
+git clone --depth 1 --branch release-1.2.8 https://github.com/calagopus/panel.git ../panel
 npm run build
 npm run api:coverage -- ../panel            # fails if an operation targets a missing route
 npm run api:coverage -- ../panel --strict   # also fails if a panel route has no operation
