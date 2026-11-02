@@ -33,7 +33,7 @@ body:
     id: panel-version
     attributes:
       label: Calagopus Panel version
-      placeholder: 1.2.4
+      placeholder: 1.2.8
     validations:
       required: true
   - type: input

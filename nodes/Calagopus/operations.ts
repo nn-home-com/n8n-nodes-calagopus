@@ -145,6 +145,7 @@ export const operations: OperationSpec[] = [
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Delete Failed Backups', 'adminBackupConfigurations.deleteFailedBackups', 'POST', '/api/admin/backup-configurations/{backupConfigurationUuid}/backups/delete-failed', 'Queue deletion of all failed backups for a backup configuration', ['backupConfigurationUuid']),
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Duplicate', 'adminBackupConfigurations.duplicate', 'POST', '/api/admin/backup-configurations/{backupConfigurationUuid}/duplicate', 'Duplicate a backup configuration', ['backupConfigurationUuid']),
 	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Test', 'adminBackupConfigurations.test', 'POST', '/api/admin/backup-configurations/test', 'Test a backup configuration on a node'),
+	op('adminBackupConfigurations', 'Admin Backup Configurations', 'Retry Failed Backup Deletions', 'adminBackupConfigurations.retryFailedDeletions', 'POST', '/api/admin/backup-configurations/{backupConfigurationUuid}/backups/retry-failed-deletions', 'Queue failed backup deletions of a backup configuration for another attempt', ['backupConfigurationUuid']),
 
 	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Create', 'adminDatabaseAgentHosts.create', 'POST', '/api/admin/database-agent-hosts', 'Create a database agent host'),
 	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Delete', 'adminDatabaseAgentHosts.delete', 'DELETE', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}', 'Delete a database agent host', ['databaseAgentHostUuid']),
@@ -167,6 +168,9 @@ export const operations: OperationSpec[] = [
 	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Config', 'adminDatabaseAgentHosts.updateConfig', 'PATCH', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/config', 'Update the database agent configuration', ['databaseAgentHostUuid']),
 	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Default Config', 'adminDatabaseAgentHosts.updateDefaultConfig', 'PATCH', '/api/admin/database-agent-hosts/config', 'Update the default database agent configuration'),
 	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Update Instance', 'adminDatabaseAgentHosts.updateInstance', 'PATCH', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/instances/{databaseInstanceUuid}', 'Update a database instance', ['databaseAgentHostUuid', 'databaseInstanceUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Retry Failed Backup Deletions', 'adminDatabaseAgentHosts.retryFailedDeletions', 'POST', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/backups/retry-failed-deletions', 'Queue failed backup deletions of a database agent host for another attempt', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Get Upgrade Status', 'adminDatabaseAgentHosts.getUpgradeStatus', 'GET', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/upgrade', 'Get the upgrade status of a database agent host', ['databaseAgentHostUuid']),
+	op('adminDatabaseAgentHosts', 'Admin Database Agent Hosts', 'Upgrade', 'adminDatabaseAgentHosts.upgrade', 'POST', '/api/admin/database-agent-hosts/{databaseAgentHostUuid}/upgrade', 'Upgrade a database agent host', ['databaseAgentHostUuid']),
 
 	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Create', 'adminDatabaseAgentTemplates.create', 'POST', '/api/admin/database-agent-templates', 'Create a database agent template'),
 	op('adminDatabaseAgentTemplates', 'Admin Database Agent Templates', 'Delete', 'adminDatabaseAgentTemplates.delete', 'DELETE', '/api/admin/database-agent-templates/{databaseAgentTemplateUuid}', 'Delete a database agent template', ['databaseAgentTemplateUuid']),
@@ -185,6 +189,9 @@ export const operations: OperationSpec[] = [
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Test', 'adminDatabaseHosts.test', 'POST', '/api/admin/database-hosts/{databaseHostUuid}/test', 'Test a database host connection', ['databaseHostUuid']),
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Update', 'adminDatabaseHosts.update', 'PATCH', '/api/admin/database-hosts/{databaseHostUuid}', 'Update a database host', ['databaseHostUuid']),
 	op('adminDatabaseHosts', 'Admin Database Hosts', 'Delete Database', 'adminDatabaseHosts.deleteDatabase', 'DELETE', '/api/admin/database-hosts/{databaseHostUuid}/databases/{databaseUuid}', 'Delete a database on a database host', ['databaseHostUuid', 'databaseUuid']),
+	op('adminDatabaseHosts', 'Admin Database Hosts', 'Get Counts', 'adminDatabaseHosts.getCounts', 'GET', '/api/admin/database-hosts/counts', 'Get the number of databases per database host'),
+	op('adminDatabaseHosts', 'Admin Database Hosts', 'Get Database Sizes', 'adminDatabaseHosts.getDatabaseSizes', 'GET', '/api/admin/database-hosts/{databaseHostUuid}/databases/sizes', 'Get the sizes of the databases on a database host', ['databaseHostUuid']),
+	op('adminDatabaseHosts', 'Admin Database Hosts', 'Get Version', 'adminDatabaseHosts.getVersion', 'GET', '/api/admin/database-hosts/{databaseHostUuid}/version', 'Get the server version of a database host', ['databaseHostUuid']),
 
 	op('adminDevices', 'Admin Devices', 'Create', 'adminDevices.create', 'POST', '/api/admin/devices', 'Create a device'),
 	op('adminDevices', 'Admin Devices', 'Delete', 'adminDevices.delete', 'DELETE', '/api/admin/devices/{deviceUuid}', 'Delete a device', ['deviceUuid']),
@@ -212,6 +219,8 @@ export const operations: OperationSpec[] = [
 	op('adminEggRepositories', 'Admin Egg Repositories', 'Install Egg From Repository', 'adminEggRepositories.installRepoEgg', 'POST', '/api/admin/egg-repositories/{eggRepositoryUuid}/eggs/{eggUuid}/install', 'Install a specific egg from a repository', ['eggRepositoryUuid', 'eggUuid']),
 	op('adminEggRepositories', 'Admin Egg Repositories', 'Sync', 'adminEggRepositories.sync', 'POST', '/api/admin/egg-repositories/{eggRepositoryUuid}/sync', 'Sync an egg repository', ['eggRepositoryUuid']),
 	op('adminEggRepositories', 'Admin Egg Repositories', 'Update', 'adminEggRepositories.update', 'PATCH', '/api/admin/egg-repositories/{eggRepositoryUuid}', 'Update an egg repository', ['eggRepositoryUuid']),
+	op('adminEggRepositories', 'Admin Egg Repositories', 'Get Counts', 'adminEggRepositories.getCounts', 'GET', '/api/admin/egg-repositories/counts', 'Get the number of eggs per egg repository'),
+	op('adminEggRepositories', 'Admin Egg Repositories', 'Get All Eggs', 'adminEggRepositories.getAllEggs', 'GET', '/api/admin/egg-repositories/eggs', 'List eggs across all egg repositories'),
 
 	op('adminExtensions', 'Admin Extensions', 'Add', 'adminExtensions.add', 'PUT', '/api/admin/extensions/manage/add', 'Add or install an extension'),
 	op('adminExtensions', 'Admin Extensions', 'Get Build Logs', 'adminExtensions.getBuildLogs', 'GET', '/api/admin/extensions/manage/logs', 'Get extension build logs'),
@@ -236,6 +245,7 @@ export const operations: OperationSpec[] = [
 	op('adminLocations', 'Admin Locations', 'Create Database Agent Host Link', 'adminLocations.createDatabaseAgentHostLink', 'POST', '/api/admin/locations/{locationUuid}/database-agent-hosts', 'Link a database agent host to a location', ['locationUuid']),
 	op('adminLocations', 'Admin Locations', 'Delete Database Agent Host Link', 'adminLocations.deleteDatabaseAgentHostLink', 'DELETE', '/api/admin/locations/{locationUuid}/database-agent-hosts/{databaseAgentHostUuid}', 'Unlink a database agent host from a location', ['locationUuid', 'databaseAgentHostUuid']),
 	op('adminLocations', 'Admin Locations', 'Get Database Agent Hosts', 'adminLocations.getDatabaseAgentHosts', 'GET', '/api/admin/locations/{locationUuid}/database-agent-hosts', 'List database agent hosts linked to a location', ['locationUuid']),
+	op('adminLocations', 'Admin Locations', 'Get Counts', 'adminLocations.getCounts', 'GET', '/api/admin/locations/counts', 'Get the number of nodes and servers per location'),
 
 	op('adminMounts', 'Admin Mounts', 'Create', 'adminMounts.create', 'POST', '/api/admin/mounts', 'Create a mount'),
 	op('adminMounts', 'Admin Mounts', 'Delete', 'adminMounts.delete', 'DELETE', '/api/admin/mounts/{mountUuid}', 'Delete a mount', ['mountUuid']),
@@ -253,7 +263,7 @@ export const operations: OperationSpec[] = [
 	op('adminNests', 'Admin Nests', 'Delete Egg', 'adminNests.deleteEgg', 'DELETE', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}', 'Delete an egg', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Export Egg', 'adminNests.exportEgg', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/export', 'Export an egg', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Get', 'adminNests.get', 'GET', '/api/admin/nests/{nestUuid}', 'Get a nest', ['nestUuid']),
-	op('adminNests', 'Admin Nests', 'Get All Eggs', 'adminNests.getAllEggs', 'GET', '/api/admin/nests/eggs', 'List all eggs'),
+	op('adminNests', 'Admin Nests', 'Get All Eggs', 'adminNests.getAllEggs', 'GET', '/api/admin/nests/eggs', 'List all eggs grouped by nest'),
 	op('adminNests', 'Admin Nests', 'Get Egg', 'adminNests.getEgg', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}', 'Get an egg', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Get Egg Mounts', 'adminNests.getEggMounts', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/mounts', 'List egg mounts', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Get Egg Servers', 'adminNests.getEggServers', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/servers', 'List servers using an egg', ['nestUuid', 'eggUuid']),
@@ -282,6 +292,9 @@ export const operations: OperationSpec[] = [
 	op('adminNests', 'Admin Nests', 'Get Egg Devices', 'adminNests.getEggDevices', 'GET', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/devices', 'List devices attached to an egg', ['nestUuid', 'eggUuid']),
 	op('adminNests', 'Admin Nests', 'Import Eggs From URLs', 'adminNests.importEggsFromUrls', 'POST', '/api/admin/nests/{nestUuid}/eggs/import/url', 'Import one or more eggs from URLs', ['nestUuid']),
 	op('adminNests', 'Admin Nests', 'Update Egg From URL', 'adminNests.updateEggFromUrl', 'POST', '/api/admin/nests/{nestUuid}/eggs/{eggUuid}/update/import/url', 'Update an egg from an egg file URL', ['nestUuid', 'eggUuid']),
+	op('adminNests', 'Admin Nests', 'Get Many Eggs', 'adminNests.getManyEggs', 'GET', '/api/admin/eggs', 'List eggs across all nests, with search and an optional nest filter'),
+	op('adminNests', 'Admin Nests', 'Get Egg Counts', 'adminNests.getEggCounts', 'GET', '/api/admin/eggs/counts', 'Get the number of servers per egg'),
+	op('adminNests', 'Admin Nests', 'Get Counts', 'adminNests.getCounts', 'GET', '/api/admin/nests/counts', 'Get the number of eggs and servers per nest'),
 
 	op('adminNodes', 'Admin Nodes', 'Create', 'adminNodes.create', 'POST', '/api/admin/nodes', 'Create a node'),
 	op('adminNodes', 'Admin Nodes', 'Create Allocations', 'adminNodes.createAllocations', 'POST', '/api/admin/nodes/{nodeUuid}/allocations', 'Create node allocations', ['nodeUuid']),
@@ -347,6 +360,10 @@ export const operations: OperationSpec[] = [
 	op('adminNodes', 'Admin Nodes', 'Reassign Backup', 'adminNodes.reassignBackup', 'POST', '/api/admin/nodes/{nodeUuid}/backups/{backupUuid}/reassign', 'Reassign a database backup to another database instance', ['nodeUuid', 'backupUuid']),
 	op('adminNodes', 'Admin Nodes', 'Rotate Tunnel Credentials', 'adminNodes.rotateTunnelCredentials', 'POST', '/api/admin/nodes/{nodeUuid}/tunnel/rotate', 'Rotate the tunnel credentials of a node', ['nodeUuid']),
 	op('adminNodes', 'Admin Nodes', 'Update Tunnel', 'adminNodes.updateTunnel', 'PATCH', '/api/admin/nodes/{nodeUuid}/tunnel', 'Update the tunnel configuration of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Retry Failed Backup Deletions', 'adminNodes.retryFailedDeletions', 'POST', '/api/admin/nodes/{nodeUuid}/backups/retry-failed-deletions', 'Queue failed backup deletions of a node for another attempt', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Bandwidth', 'adminNodes.getBandwidth', 'GET', '/api/admin/nodes/{nodeUuid}/bandwidth', 'Get the bandwidth status of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Get Upgrade Status', 'adminNodes.getUpgradeStatus', 'GET', '/api/admin/nodes/{nodeUuid}/upgrade', 'Get the Wings upgrade status of a node', ['nodeUuid']),
+	op('adminNodes', 'Admin Nodes', 'Upgrade', 'adminNodes.upgrade', 'POST', '/api/admin/nodes/{nodeUuid}/upgrade', 'Upgrade Wings on a node', ['nodeUuid']),
 
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Create', 'adminOAuthProviders.create', 'POST', '/api/admin/oauth-providers', 'Create an OAuth provider'),
 	op('adminOAuthProviders', 'Admin OAuth Providers', 'Create Mapping', 'adminOAuthProviders.createMapping', 'POST', '/api/admin/oauth-providers/{oauthProviderUuid}/mappings', 'Create an OAuth provider mapping', ['oauthProviderUuid']),
@@ -370,6 +387,7 @@ export const operations: OperationSpec[] = [
 	op('adminRoles', 'Admin Roles', 'Get Users', 'adminRoles.getUsers', 'GET', '/api/admin/roles/{roleUuid}/users', 'List users in a role', ['roleUuid']),
 	op('adminRoles', 'Admin Roles', 'Update', 'adminRoles.update', 'PATCH', '/api/admin/roles/{roleUuid}', 'Update a role', ['roleUuid']),
 	op('adminRoles', 'Admin Roles', 'Duplicate', 'adminRoles.duplicate', 'POST', '/api/admin/roles/{roleUuid}/duplicate', 'Duplicate a role', ['roleUuid']),
+	op('adminRoles', 'Admin Roles', 'Get Counts', 'adminRoles.getCounts', 'GET', '/api/admin/roles/counts', 'Get the number of users per role'),
 
 	op('adminServers', 'Admin Servers', 'Cancel Transfer', 'adminServers.cancelTransfer', 'POST', '/api/admin/servers/{serverUuid}/transfer/cancel', 'Cancel a server transfer', ['serverUuid']),
 	op('adminServers', 'Admin Servers', 'Clear State', 'adminServers.clearState', 'POST', '/api/admin/servers/{serverUuid}/clear-state', 'Clear server state', ['serverUuid']),
@@ -401,6 +419,7 @@ export const operations: OperationSpec[] = [
 	op('adminServers', 'Admin Servers', 'Get Database Instances', 'adminServers.getDatabaseInstances', 'GET', '/api/admin/servers/{serverUuid}/databases/instances', 'List database instances of a server', ['serverUuid']),
 	op('adminServers', 'Admin Servers', 'Get Databases', 'adminServers.getDatabases', 'GET', '/api/admin/servers/{serverUuid}/databases', 'List databases of a server', ['serverUuid']),
 	op('adminServers', 'Admin Servers', 'Get Devices', 'adminServers.getDevices', 'GET', '/api/admin/servers/{serverUuid}/devices', 'List devices attached to a server', ['serverUuid']),
+	op('adminServers', 'Admin Servers', 'Retry Failed Backup Deletions', 'adminServers.retryFailedDeletions', 'POST', '/api/admin/servers/{serverUuid}/backups/retry-failed-deletions', 'Queue failed backup deletions of a server for another attempt', ['serverUuid']),
 
 	op('adminSettings', 'Admin Settings', 'Get', 'adminSettings.get', 'GET', '/api/admin/settings', 'Get admin settings'),
 	op('adminSettings', 'Admin Settings', 'Get Email Template', 'adminSettings.getEmailTemplate', 'GET', '/api/admin/system/email/templates/{templateIdentifier}', 'Get an email template', ['templateIdentifier']),
@@ -453,6 +472,7 @@ export const operations: OperationSpec[] = [
 	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Get Servers', 'adminSystemBackupPolicies.getServers', 'GET', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/servers', 'List servers in a system backup policy', ['systemBackupPolicyUuid']),
 	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Trigger', 'adminSystemBackupPolicies.trigger', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/trigger', 'Run a system backup policy now', ['systemBackupPolicyUuid']),
 	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Update', 'adminSystemBackupPolicies.update', 'PATCH', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}', 'Update a system backup policy', ['systemBackupPolicyUuid']),
+	op('adminSystemBackupPolicies', 'Admin System Backup Policies', 'Retry Failed Backup Deletions', 'adminSystemBackupPolicies.retryFailedDeletions', 'POST', '/api/admin/system-backup-policies/{systemBackupPolicyUuid}/backups/retry-failed-deletions', 'Queue failed backup deletions of a system backup policy for another attempt', ['systemBackupPolicyUuid']),
 
 	op('adminUsers', 'Admin Users', 'Create', 'adminUsers.create', 'POST', '/api/admin/users', 'Create a user'),
 	op('adminUsers', 'Admin Users', 'Create OAuth Link', 'adminUsers.createOAuthLink', 'POST', '/api/admin/users/{userUuid}/oauth-links', 'Create a user OAuth link', ['userUuid']),
@@ -516,6 +536,7 @@ export const operations: OperationSpec[] = [
 	op('clientAccount', 'Client Account', 'Resend Verification Email', 'clientAccount.resendVerificationEmail', 'POST', '/api/client/account/email/resend-verification', 'Resend the email address verification email'),
 	op('clientAccount', 'Client Account', 'Update Password Login', 'clientAccount.updatePasswordLogin', 'PUT', '/api/client/account/password-login', 'Enable or disable password login for the account'),
 	op('clientAccount', 'Client Account', 'Update Settings', 'clientAccount.updateSettings', 'PATCH', '/api/client/account/settings', 'Update the synced account settings'),
+	op('clientAccount', 'Client Account', 'Get OAuth Providers', 'clientAccount.getOAuthProviders', 'GET', '/api/client/account/oauth-links/providers', 'List OAuth providers available for linking'),
 
 	op('clientServer', 'Client Server', 'Get', 'clientServer.get', 'GET', '/api/client/servers/{serverUuid}', 'Get a server', ['serverUuid']),
 	op('clientServer', 'Client Server', 'Get Activity', 'clientServer.getActivity', 'GET', '/api/client/servers/{serverUuid}/activity', 'Get server activity', ['serverUuid']),
@@ -629,6 +650,8 @@ export const operations: OperationSpec[] = [
 	op('serverDatabases', 'Server Databases', 'Recreate', 'serverDatabases.recreate', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/recreate', 'Recreate a database', ['serverUuid', 'databaseUuid']),
 	op('serverDatabases', 'Server Databases', 'Rotate Password', 'serverDatabases.rotatePassword', 'POST', '/api/client/servers/{serverUuid}/databases/{databaseUuid}/rotate-password', 'Rotate database password', ['serverUuid', 'databaseUuid']),
 	op('serverDatabases', 'Server Databases', 'Update', 'serverDatabases.update', 'PATCH', '/api/client/servers/{serverUuid}/databases/{databaseUuid}', 'Update a database', ['serverUuid', 'databaseUuid']),
+	op('serverDatabases', 'Server Databases', 'Get Host', 'serverDatabases.getHost', 'GET', '/api/client/servers/{serverUuid}/databases/hosts/{databaseHostUuid}', 'Get an available database host', ['serverUuid', 'databaseHostUuid']),
+	op('serverDatabases', 'Server Databases', 'Get Host Database Sizes', 'serverDatabases.getHostDatabaseSizes', 'GET', '/api/client/servers/{serverUuid}/databases/hosts/{databaseHostUuid}/sizes', 'Get the sizes of the server databases on a database host', ['serverUuid', 'databaseHostUuid']),
 
 	op('serverDevices', 'Server Devices', 'Create', 'serverDevices.create', 'POST', '/api/client/servers/{serverUuid}/devices', 'Attach a device to the server', ['serverUuid']),
 	op('serverDevices', 'Server Devices', 'Delete', 'serverDevices.delete', 'DELETE', '/api/client/servers/{serverUuid}/devices/{deviceUuid}', 'Detach a device from the server', ['serverUuid', 'deviceUuid']),
@@ -662,6 +685,10 @@ export const operations: OperationSpec[] = [
 	op('serverFiles', 'Server Files', 'Get Lines', 'serverFiles.getLines', 'GET', '/api/client/servers/{serverUuid}/files/lines', 'Get a range of lines from a file', ['serverUuid']),
 	op('serverFiles', 'Server Files', 'Query SQLite', 'serverFiles.querySqlite', 'POST', '/api/client/servers/{serverUuid}/files/sqlite-query', 'Run a query against an SQLite database file', ['serverUuid']),
 	op('serverFiles', 'Server Files', 'Stat', 'serverFiles.stat', 'POST', '/api/client/servers/{serverUuid}/files/stat', 'Get metadata for one or more paths', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Count Ignore Matches', 'serverFiles.countIgnoreMatches', 'POST', '/api/client/servers/{serverUuid}/files/ignore-matches', 'Count the files matched by ignore patterns', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Delete Trash Entries', 'serverFiles.deleteTrash', 'DELETE', '/api/client/servers/{serverUuid}/files/trash', 'Permanently delete entries from the trash', ['serverUuid'], { hasBody: true }),
+	op('serverFiles', 'Server Files', 'Get Trash', 'serverFiles.getTrash', 'GET', '/api/client/servers/{serverUuid}/files/trash', 'List entries in the trash', ['serverUuid']),
+	op('serverFiles', 'Server Files', 'Restore From Trash', 'serverFiles.restoreTrash', 'POST', '/api/client/servers/{serverUuid}/files/trash/restore', 'Restore entries from the trash', ['serverUuid']),
 
 	op('serverFirewall', 'Server Firewall', 'Get', 'serverFirewall.get', 'GET', '/api/client/servers/{serverUuid}/firewall', 'Get the firewall rules of the server', ['serverUuid']),
 	op('serverFirewall', 'Server Firewall', 'Update', 'serverFirewall.update', 'PUT', '/api/client/servers/{serverUuid}/firewall', 'Replace the firewall rules of the server', ['serverUuid']),
@@ -695,6 +722,7 @@ export const operations: OperationSpec[] = [
 	op('serverSettings', 'Server Settings', 'Update Auto Kill', 'serverSettings.updateAutoKill', 'PUT', '/api/client/servers/{serverUuid}/settings/auto-kill', 'Update auto-kill settings', ['serverUuid']),
 	op('serverSettings', 'Server Settings', 'Update Auto Start', 'serverSettings.updateAutoStart', 'PUT', '/api/client/servers/{serverUuid}/settings/auto-start', 'Update auto-start settings', ['serverUuid']),
 	op('serverSettings', 'Server Settings', 'Update Timezone', 'serverSettings.updateTimezone', 'PUT', '/api/client/servers/{serverUuid}/settings/timezone', 'Update server timezone', ['serverUuid']),
+	op('serverSettings', 'Server Settings', 'Update Trash', 'serverSettings.updateTrash', 'PUT', '/api/client/servers/{serverUuid}/settings/trash', 'Update the trash settings', ['serverUuid']),
 
 	op('serverStartup', 'Server Startup', 'Get Variables', 'serverStartup.getVariables', 'GET', '/api/client/servers/{serverUuid}/startup/variables', 'Get startup variables', ['serverUuid']),
 	op('serverStartup', 'Server Startup', 'Update Command', 'serverStartup.updateCommand', 'PUT', '/api/client/servers/{serverUuid}/startup/command', 'Update startup command', ['serverUuid']),
@@ -719,6 +747,8 @@ export const operations: OperationSpec[] = [
 	op('system', 'System', 'Get OpenAPI Document', 'system.getOpenApi', 'GET', '/openapi.json', 'Get the Panel OpenAPI document'),
 	op('system', 'System', 'Get Languages', 'system.getLanguages', 'GET', '/api/languages', 'List available languages'),
 	op('system', 'System', 'Get Public Settings', 'system.getPublicSettings', 'GET', '/api/settings', 'Get public panel settings'),
+	op('system', 'System', 'Get Icons', 'system.getIcons', 'GET', '/api/icons', 'List available icons'),
+	op('system', 'System', 'Get Timezones', 'system.getTimezones', 'GET', '/api/timezones', 'List available timezones'),
 ];
 
 export const customOperation: OperationSpec = op(
@@ -947,6 +977,49 @@ const structuredBodyProperties: INodeProperties[] = [
 		displayOptions: { show: showForJsonBody(['serverStartup.updateDockerImage']) },
 		default: '',
 		description: 'The Docker image to use for the server',
+	},
+	{
+		displayName: 'Force',
+		name: 'retryDeletionsForce',
+		type: 'boolean',
+		displayOptions: {
+			show: showForJsonBody([
+				'adminBackupConfigurations.retryFailedDeletions',
+				'adminDatabaseAgentHosts.retryFailedDeletions',
+				'adminNodes.retryFailedDeletions',
+				'adminServers.retryFailedDeletions',
+				'adminSystemBackupPolicies.retryFailedDeletions',
+			]),
+		},
+		default: false,
+		description:
+			'Whether to remove the backups from the panel even if deleting them from storage fails again',
+	},
+	{
+		displayName: 'Entries to Delete',
+		name: 'trashSelector',
+		type: 'options',
+		displayOptions: { show: showForJsonBody(['serverFiles.deleteTrash']) },
+		options: [
+			{ name: 'All Entries', value: 'all' },
+			{ name: 'Selected Entries', value: 'uuids' },
+		],
+		default: 'uuids',
+		description: 'Whether to empty the whole trash or delete only the selected entries',
+	},
+	{
+		displayName: 'Trash Entry UUIDs',
+		name: 'trashEntryUuids',
+		type: 'string',
+		typeOptions: {
+			rows: 5,
+		},
+		required: true,
+		displayOptions: {
+			show: { ...showForJsonBody(['serverFiles.deleteTrash']), trashSelector: ['uuids'] },
+		},
+		default: '',
+		description: 'The UUIDs of the trash entries to delete, one per line (at most 100)',
 	},
 ];
 
